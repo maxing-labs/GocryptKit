@@ -1,0 +1,118 @@
+name: GocryptKit
+options:
+  bundleIdPrefix: com.xwei
+  knownRegions:
+    - en
+    - zh-Hans
+  deploymentTarget:
+    macOS: "26.0"
+    iOS: "17.0"
+  xcodeVersion: "26.6"
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: QBFSP2CHNW
+    ARCHS: arm64
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "6.0"
+
+packages:
+  VaultCore:
+    path: Packages/VaultCore
+
+targets:
+  GocryptKit:
+    type: application
+    platform: macOS
+    deploymentTarget: "26.0"
+    sources:
+      - App
+    dependencies:
+      - target: GocryptKitExt
+      - package: VaultCore
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "26.0"
+        PRODUCT_NAME: GocryptKit
+        PRODUCT_BUNDLE_IDENTIFIER: com.xwei.GocryptfsKit
+        CODE_SIGN_ENTITLEMENTS: App/GocryptKit.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_CFBundleDisplayName: GocryptKit
+        INFOPLIST_KEY_CFBundleDevelopmentRegion: en
+        INFOPLIST_KEY_NSHumanReadableCopyright: "App icon: folder-key icon by Flaticon (flaticon.com), Flaticon Free License."
+        CURRENT_PROJECT_VERSION: "8"
+        MARKETING_VERSION: "1.2.4"
+
+  GocryptKitExt:
+    type: extensionkit-extension
+    platform: macOS
+    deploymentTarget: "26.0"
+    sources:
+      - Extension
+    dependencies:
+      - package: VaultCore
+      - framework: Engine/build/libgocryptfs.xcframework
+      - sdk: FSKit.framework
+      - sdk: ExtensionFoundation.framework
+      - sdk: Security.framework
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "26.0"
+        PRODUCT_NAME: GocryptKitExt
+        PRODUCT_BUNDLE_IDENTIFIER: com.xwei.GocryptfsKit.AppEx
+        CODE_SIGN_ENTITLEMENTS: Extension/GocryptKitExt.entitlements
+        GENERATE_INFOPLIST_FILE: true
+        INFOPLIST_FILE: Extension/Info.plist
+        INFOPLIST_KEY_CFBundleDevelopmentRegion: en
+        ENABLE_HARDENED_RUNTIME: YES
+        CURRENT_PROJECT_VERSION: "8"
+        MARKETING_VERSION: "1.2.4"
+
+  GocryptKit-iOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - App-iOS
+    dependencies:
+      - package: VaultCore
+    settings:
+      base:
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        PRODUCT_NAME: GocryptKit
+        PRODUCT_BUNDLE_IDENTIFIER: com.xwei.GocryptfsKit.iOS
+        CODE_SIGN_ENTITLEMENTS: App-iOS/GocryptKit-iOS.entitlements
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_CFBundleDisplayName: GocryptKit
+        INFOPLIST_KEY_CFBundleDevelopmentRegion: en
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Access to your photo library is needed to encrypt and store photos into your vault."
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations~ipad: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown"
+        CURRENT_PROJECT_VERSION: "8"
+        MARKETING_VERSION: "1.2.4"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SKIP_INSTALL: NO
+
+schemes:
+  GocryptKit:
+    build:
+      targets:
+        GocryptKit: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
+  GocryptKit-iOS:
+    build:
+      targets:
+        GocryptKit-iOS: all
+    run:
+      config: Debug
+    archive:
+      config: Release
