@@ -17,11 +17,16 @@ struct CreateVaultView: View {
     @State private var acknowledgedNoRecovery = false
     @State private var isBusy = false
     @State private var errorMessage: String? = nil
+    @State private var showWeakPasswordWarning = false
 
     private var strength: PasswordStrength { PasswordStrength.evaluate(password) }
 
     private var passwordsMatch: Bool {
         !confirmation.isEmpty && password == confirmation
+    }
+
+    private var isPasswordWeak: Bool {
+        password.count < 8 || strength == .weak
     }
 
     private var canCreate: Bool {
@@ -30,6 +35,7 @@ struct CreateVaultView: View {
             && strength > .tooShort
             && passwordsMatch
             && acknowledgedNoRecovery
+            && directoryHint?.isProblem != true
     }
 
     var body: some View {
@@ -138,6 +144,14 @@ struct CreateVaultView: View {
         }
         .padding(20)
         .frame(width: 480)
+        .alert(loc("Weak Password Warning"), isPresented: $showWeakPasswordWarning) {
+            Button(loc("Cancel"), role: .cancel) {}
+            Button(loc("Continue Creation"), role: .destructive) {
+                actuallyCreateVault()
+            }
+        } message: {
+            Text(loc("The chosen password is short or weak, which makes the vault susceptible to offline brute-force attacks. Are you sure you want to continue?"))
+        }
     }
 
     private var strengthMeter: some View {
@@ -170,8 +184,14 @@ struct CreateVaultView: View {
         let fm = FileManager.default
 
         var isDir: ObjCBool = false
-        guard fm.fileExists(atPath: path, isDirectory: &isDir) else {
-            return (loc("Directory does not exist"), true)
+        if !fm.fileExists(atPath: path, isDirectory: &isDir) {
+            let parentPath = (path as NSString).deletingLastPathComponent
+            var isParentDir: ObjCBool = false
+            if fm.fileExists(atPath: parentPath, isDirectory: &isParentDir) && isParentDir.boolValue && fm.isWritableFile(atPath: parentPath) {
+                return (loc("Directory will be created automatically"), false)
+            } else {
+                return (loc("Directory does not exist"), true)
+            }
         }
         guard isDir.boolValue else {
             return (loc("This is a file, not a directory"), true)
@@ -200,6 +220,14 @@ struct CreateVaultView: View {
     }
 
     private func performCreate() {
+        if isPasswordWeak {
+            showWeakPasswordWarning = true
+        } else {
+            actuallyCreateVault()
+        }
+    }
+
+    private func actuallyCreateVault() {
         errorMessage = nil
         isBusy = true
         let dir = URL(fileURLWithPath: (cipherPath as NSString).expandingTildeInPath)
@@ -208,6 +236,9 @@ struct CreateVaultView: View {
         // Default scrypt logN=16 takes 1-2 seconds; must not block the main thread.
         Task.detached(priority: .userInitiated) {
             do {
+                if !FileManager.default.fileExists(atPath: dir.path) {
+                    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                }
                 _ = try GocryptfsEngine.createVault(at: dir, password: pwd)
                 await MainActor.run {
                     isBusy = false
@@ -238,7 +269,7 @@ private extension PasswordStrength {
 
     var localizedAdvice: String {
         switch self {
-        case .tooShort: return loc("At least \(Self.minimumLength) characters required")
+        case .tooShort: return loc("At least 4 characters required")
         case .weak:     return loc("Make it longer; mix uppercase, lowercase, numbers, and symbols")
         case .fair:     return loc("A bit longer would be safer")
         case .strong:   return loc("Sufficient strength")

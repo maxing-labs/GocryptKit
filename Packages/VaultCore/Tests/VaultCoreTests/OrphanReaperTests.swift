@@ -77,4 +77,17 @@ final class OrphanReaperTests: XCTestCase {
         )
         XCTAssertEqual(reaped, [key1])
     }
+
+    func testIncludeMountContextReapsBothCredentialAndMountContext() {
+        let path = "/Users/test/vault1"
+        let key = Vault.canonicalKey(path: path)
+        let ctxKey = MountContextStore.accountKey(for: path)
+
+        let reaped = OrphanReaper.accountsToReap(
+            knownVaultPaths: [path],
+            mountedCanonicalKeys: [],
+            includeMountContext: true
+        )
+        XCTAssertEqual(reaped, [key, ctxKey])
+    }
 }

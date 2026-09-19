@@ -115,14 +115,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appMenu.addItem(NSMenuItem.separator())
 
         let hideItem = NSMenuItem(
-            title: "Hide \(appName)",
+            title: loc("Hide \(appName)"),
             action: #selector(NSApplication.hide(_:)),
             keyEquivalent: "h"
         )
         appMenu.addItem(hideItem)
 
         let hideOthersItem = NSMenuItem(
-            title: "Hide Others",
+            title: loc("Hide Others"),
             action: #selector(NSApplication.hideOtherApplications(_:)),
             keyEquivalent: "h"
         )
@@ -130,7 +130,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appMenu.addItem(hideOthersItem)
 
         let showAllItem = NSMenuItem(
-            title: "Show All",
+            title: loc("Show All"),
             action: #selector(NSApplication.unhideAllApplications(_:)),
             keyEquivalent: ""
         )
@@ -138,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appMenu.addItem(NSMenuItem.separator())
 
         let quitItem = NSMenuItem(
-            title: "Quit \(appName)",
+            title: loc("Quit \(appName)"),
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         )
@@ -148,7 +148,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 2. File Menu
         let fileMenuItem = NSMenuItem()
-        let fileMenu = NSMenu(title: "File")
+        let fileMenu = NSMenu(title: loc("File"))
         let newItem = NSMenuItem(
             title: loc("Create New Vault…"),
             action: #selector(showMainWindow(_:)),
@@ -177,25 +177,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 3. Edit Menu (for Copy, Paste, Select All, Undo, Redo in TextFields)
         let editMenuItem = NSMenuItem()
-        let editMenu = NSMenu(title: "Edit")
-        editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
-        let redoItem = NSMenuItem(title: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+        let editMenu = NSMenu(title: loc("Edit"))
+        editMenu.addItem(withTitle: loc("Undo"), action: Selector(("undo:")), keyEquivalent: "z")
+        let redoItem = NSMenuItem(title: loc("Redo"), action: Selector(("redo:")), keyEquivalent: "Z")
         editMenu.addItem(redoItem)
         editMenu.addItem(NSMenuItem.separator())
-        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
-        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
-        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
-        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editMenu.addItem(withTitle: loc("Cut"), action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: loc("Copy"), action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: loc("Paste"), action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: loc("Select All"), action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         editMenuItem.submenu = editMenu
         mainMenu.addItem(editMenuItem)
 
-        // 3. Window Menu
+        // 4. Window Menu
         let windowMenuItem = NSMenuItem()
-        let windowMenu = NSMenu(title: "Window")
-        windowMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.miniaturize(_:)), keyEquivalent: "m")
-        windowMenu.addItem(withTitle: "Zoom", action: #selector(NSWindow.zoom(_:)), keyEquivalent: "")
+        let windowMenu = NSMenu(title: loc("Window"))
+        windowMenu.addItem(withTitle: loc("Minimize"), action: #selector(NSWindow.miniaturize(_:)), keyEquivalent: "m")
+        windowMenu.addItem(withTitle: loc("Zoom"), action: #selector(NSWindow.zoom(_:)), keyEquivalent: "")
         windowMenu.addItem(NSMenuItem.separator())
-        windowMenu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        windowMenu.addItem(withTitle: loc("Close"), action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
         windowMenuItem.submenu = windowMenu
         mainMenu.addItem(windowMenuItem)
 

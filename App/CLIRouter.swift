@@ -189,7 +189,8 @@ enum CLIRouter {
             MountManager.shared.checkExtensionStatus()
             // Note that "DISABLED" does not contain the substring "ENABLED", so e2e's `grep -q ENABLED`
             // still only matches when genuinely enabled. Review Tests/e2e/run-e2e.sh:122 before modifying these lines.
-            switch MountManager.shared.extensionStatus {
+            let status = MainActor.assumeIsolated { MountManager.shared.extensionStatus }
+            switch status {
             case .enabled:
                 print("GocryptKit Extension Status: ENABLED")
                 exit(0)

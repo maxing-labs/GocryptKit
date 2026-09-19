@@ -74,6 +74,11 @@ struct VaultRowView: View {
                 isMountReadOnly = newDefault
             }
         }
+        .onChange(of: password) { _, _ in
+            if viewModel.errorMessage != nil {
+                viewModel.errorMessage = nil
+            }
+        }
         .confirmationDialog(loc("Remove \"\(vault.name)\" from list?"),
                             isPresented: $isConfirmingRemoval,
                             titleVisibility: .visible) {
@@ -234,12 +239,70 @@ struct VaultRowView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .strokeBorder(isReadOnlyMounted ? Color.orange.opacity(0.3) : Color.green.opacity(0.2), lineWidth: 1)
                 )
-            }
+            } else {
+                field(loc("Password")) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            HStack(spacing: 4) {
+                                if isShowingPassword {
+                                    TextField(loc("Enter password (never stored anywhere)"), text: $password)
+                                        .focused($passwordFocused)
+                                } else {
+                                    SecureField(loc("Enter password (never stored anywhere)"), text: $password)
+                                        .focused($passwordFocused)
+                                }
 
-            field(loc("Name")) {
-                TextField(loc("Vault display name"), text: $editedName)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit { store.rename(vault, to: editedName) }
+                                Button {
+                                    isShowingPassword.toggle()
+                                    focusPasswordField()
+                                } label: {
+                                    Image(systemName: isShowingPassword ? "eye" : "eye.slash")
+                                        .foregroundStyle(isShowingPassword ? Color.accentColor : Color.secondary)
+                                }
+                                .buttonStyle(.plain)
+                                .help(isShowingPassword ? loc("Hide password") : loc("Show password"))
+                            }
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { if !password.isEmpty { performMount() } }
+
+                            Button(isMountReadOnly ? loc("Mount Read-Only") : loc("Mount")) {
+                                performMount()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(viewModel.isBusy || password.isEmpty)
+                        }
+
+                        HStack(spacing: 8) {
+                            Toggle(isOn: Binding(
+                                get: { !isMountReadOnly },
+                                set: { isMountReadOnly = !$0 }
+                            )) {
+                                EmptyView()
+                            }
+                            .toggleStyle(.switch)
+                            .controlSize(.small)
+                            .labelsHidden()
+
+                            HStack(spacing: 4) {
+                                Image(systemName: !isMountReadOnly ? "pencil" : "lock.slash.fill")
+                                    .foregroundStyle(!isMountReadOnly ? Color.secondary : Color.orange)
+                                Text(!isMountReadOnly ? loc("Mount in read-write mode") : loc("Mount in read-only mode"))
+                                    .font(.caption)
+                                    .foregroundStyle(!isMountReadOnly ? Color.secondary : Color.orange)
+                            }
+                            .onTapGesture {
+                                isMountReadOnly.toggle()
+                            }
+                        }
+
+                        if let errorMessage = viewModel.errorMessage, !isMounted {
+                            Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
             }
 
             field(loc("Encrypted Directory")) {
@@ -298,11 +361,17 @@ struct VaultRowView: View {
                 get: { vault.isReadOnlyDefault },
                 set: { store.setDefaultReadOnly(vault, isReadOnly: $0) }
             )) {
-                Text(loc("Default to read-only"))
+                Text(loc("Always mount as read-only by default (saved to preferences)"))
                     .font(.callout)
             }
             .toggleStyle(.checkbox)
             .help(loc("Automatically select read-only mode when mounting this vault."))
+
+            field(loc("Name")) {
+                TextField(loc("Vault display name"), text: $editedName)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { store.rename(vault, to: editedName) }
+            }
 
             if isMounted {
                 // Mount point differs from registered path, most likely mounted elsewhere via CLI.
@@ -317,50 +386,9 @@ struct VaultRowView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-            } else {
-                field(loc("Password")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 6) {
-                            HStack(spacing: 4) {
-                                if isShowingPassword {
-                                    TextField(loc("Enter password (never stored anywhere)"), text: $password)
-                                        .focused($passwordFocused)
-                                } else {
-                                    SecureField(loc("Enter password (never stored anywhere)"), text: $password)
-                                        .focused($passwordFocused)
-                                }
-
-                                Button {
-                                    isShowingPassword.toggle()
-                                    focusPasswordField()
-                                } label: {
-                                    Image(systemName: isShowingPassword ? "eye" : "eye.slash")
-                                        .foregroundStyle(isShowingPassword ? Color.accentColor : Color.secondary)
-                                }
-                                .buttonStyle(.plain)
-                                .help(isShowingPassword ? loc("Hide password") : loc("Show password"))
-                            }
-                            .textFieldStyle(.roundedBorder)
-                            .onSubmit { if !password.isEmpty { performMount() } }
-
-                            Button(isMountReadOnly ? loc("Mount Read-Only") : loc("Mount")) {
-                                performMount()
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .disabled(viewModel.isBusy || password.isEmpty)
-                        }
-
-                        Toggle(isOn: $isMountReadOnly) {
-                            Text(loc("Mount as read-only"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .toggleStyle(.checkbox)
-                    }
-                }
             }
 
-            if let errorMessage = viewModel.errorMessage {
+            if isMounted, let errorMessage = viewModel.errorMessage {
                 VStack(alignment: .leading, spacing: 6) {
                     Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
@@ -434,7 +462,16 @@ struct VaultRowView: View {
     }
 
     private func performUnmount() {
-        viewModel.performUnmount(vault: vault, actualMountPoint: actualMountPoint, store: store)
+        viewModel.performUnmount(
+            vault: vault,
+            actualMountPoint: actualMountPoint,
+            store: store,
+            onExpand: {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isExpanded = true
+                }
+            }
+        )
     }
 
     private func chooseMountPoint() {

@@ -274,7 +274,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
     }
 
     private func performUnmount(vault: Vault) {
-        guard let mountPath = store.actualMountPoint(vault) ?? (store.isMounted(vault) ? vault.mountPointPath : nil) else {
+        guard let mountPath = store.actualMountPoint(vault) ?? (store.isReadOnly(vault) ? vault.readOnlyMountPointPath : nil) ?? (store.isMounted(vault) ? vault.mountPointPath : nil) else {
             unmountingVaultIDs.remove(vault.id)
             return
         }

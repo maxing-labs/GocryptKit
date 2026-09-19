@@ -1,2109 +1,2551 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Currently mounted in read-only mode" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Currently mounted in read-only mode"
+  "sourceLanguage": "en",
+  "strings": {
+    "Currently mounted in read-only mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currently mounted in read-only mode"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前以只读模式挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前以只读模式挂载"
           }
         }
       }
     },
-    "Currently mounted in read-write mode" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Currently mounted in read-write mode"
+    "Currently mounted in read-write mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currently mounted in read-write mode"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前以读写模式挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前以读写模式挂载"
           }
         }
       }
     },
-    "Files are protected against modification, creation, and deletion." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Files are protected against modification, creation, and deletion."
+    "Files are protected against modification, creation, and deletion.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files are protected against modification, creation, and deletion."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件写入、创建与删除已被系统拦截。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件写入、创建与删除已被系统拦截。"
           }
         }
       }
     },
-    "Full read and write permissions are enabled." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Full read and write permissions are enabled."
+    "Full read and write permissions are enabled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full read and write permissions are enabled."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已启用完整读写权限。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已启用完整读写权限。"
           }
         }
       }
     },
-    "Mounted (Read-Write)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mounted (Read-Write)"
+    "Mounted (Read-Write)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mounted (Read-Write)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已挂载 (读写)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已挂载 (读写)"
           }
         }
       }
     },
-    "Automatically select read-only mode when mounting this vault." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatically select read-only mode when mounting this vault."
+    "Automatically select read-only mode when mounting this vault.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically select read-only mode when mounting this vault."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "挂载此加密卷时默认选择只读模式。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "挂载此加密卷时默认选择只读模式。"
           }
         }
       }
     },
-    "Default to read-only" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Default to read-only"
+    "Default to read-only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default to read-only"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "默认以只读模式挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认以只读模式挂载"
           }
         }
       }
     },
-    "Mount (Read-Write)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mount (Read-Write)"
+    "Mount (Read-Write)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mount (Read-Write)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "读写模式挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "读写模式挂载"
           }
         }
       }
     },
-    "Mount Read-Only" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mount Read-Only"
+    "Mount Read-Only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mount Read-Only"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "只读挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只读挂载"
           }
         }
       }
     },
-    "Mount as Read-Only" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mount as Read-Only"
+    "Mount as Read-Only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mount as Read-Only"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以只读模式挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以只读模式挂载"
           }
         }
       }
     },
-    "Mount as read-only" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mount as read-only"
+    "Mount as read-only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mount as read-only"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以只读模式挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以只读模式挂载"
           }
         }
       }
     },
-    "Mounted (Read-Only)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mounted (Read-Only)"
+    "Mounted (Read-Only)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mounted (Read-Only)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已挂载 (只读)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已挂载 (只读)"
           }
         }
       }
     },
-    "Read-Only" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Read-Only"
+    "Read-Only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read-Only"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "只读"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只读"
           }
         }
       }
     },
-    "%lld vaults, %lld mounted" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld vault, %lld mounted"
+    "%lld vaults, %lld mounted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld vault, %lld mounted"
                 }
               },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld vaults, %lld mounted"
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld vaults, %lld mounted"
                 }
               }
             }
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 个卷，%lld 个已挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个卷，%lld 个已挂载"
           }
         }
       }
     },
-    "A bit longer would be safer" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A bit longer would be safer"
+    "A bit longer would be safer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A bit longer would be safer"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "再长一些会更安全"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再长一些会更安全"
           }
         }
       }
     },
-    "A vault already exists here; please mount it directly" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A vault already exists here; please mount it directly"
+    "A vault already exists here; please mount it directly": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A vault already exists here; please mount it directly"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这里已经有一个加密卷了，请直接挂载它"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这里已经有一个加密卷了，请直接挂载它"
           }
         }
       }
     },
-    "Add Existing Vault…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add Existing Vault…"
+    "Add Existing Vault…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Existing Vault…"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加已有 Vault…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加已有 Vault…"
           }
         }
       }
     },
-    "Add an existing gocryptfs directory, or create a new one." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add an existing gocryptfs directory, or create a new one."
+    "Add an existing gocryptfs directory, or create a new one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add an existing gocryptfs directory, or create a new one."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加一个已有的 gocryptfs 目录，或者新建一个。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加一个已有的 gocryptfs 目录，或者新建一个。"
           }
         }
       }
     },
-    "At least %lld characters required" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "At least %lld characters required"
+    "At least %lld characters required": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At least %lld characters required"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "至少需要 %lld 个字符"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "至少需要 %lld 个字符"
           }
         }
       }
     },
-    "Cancel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+    "At least 4 characters required": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At least 4 characters required"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "至少需要 4 个字符"
           }
         }
       }
     },
-    "Change…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change…"
+    "Caps Lock is on": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caps Lock is on"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更改…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大写锁定已打开"
           }
         }
       }
     },
-    "Checking extension…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Checking extension…"
+    "Caps Lock is On": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caps Lock is On"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在检查扩展…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大写锁定已打开"
           }
         }
       }
     },
-    "Choose" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose"
+    "Cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         }
       }
     },
-    "Choose mount point for \"%@\"" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose mount point for \"%@\""
+    "Change…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change…"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择「%@」的挂载点"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更改…"
           }
         }
       }
     },
-    "Choose an empty directory" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose an empty directory"
+    "Checking extension…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking extension…"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择一个空目录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在检查扩展…"
           }
         }
       }
     },
-    "Choose an empty directory to store encrypted data" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose an empty directory to store encrypted data"
+    "Choose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择一个空目录用来存放加密后的数据"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择"
           }
         }
       }
     },
-    "Choose an existing gocryptfs encrypted directory" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose an existing gocryptfs encrypted directory"
+    "Choose mount point for \"%@\"": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose mount point for \"%@\""
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择一个已有的 gocryptfs 密文目录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择「%@」的挂载点"
           }
         }
       }
     },
-    "Choose…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose…"
+    "Choose an empty directory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an empty directory"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一个空目录"
           }
         }
       }
     },
-    "Collapse" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collapse"
+    "Choose an empty directory to store encrypted data": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an empty directory to store encrypted data"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "收起"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一个空目录用来存放加密后的数据"
           }
         }
       }
     },
-    "Confirm password:" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Confirm password:"
+    "Choose an existing gocryptfs encrypted directory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an existing gocryptfs encrypted directory"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "再输一次 (Confirm):"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一个已有的 gocryptfs 密文目录"
           }
         }
       }
     },
-    "Create" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create"
+    "Choose…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose…"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择..."
           }
         }
       }
     },
-    "Create New Vault" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create New Vault"
+    "Collapse": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建新 Vault"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收起"
           }
         }
       }
     },
-    "Create New Vault…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create New Vault…"
+    "Confirm password:": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm password:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建新 Vault…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再输一次 (Confirm):"
           }
         }
       }
     },
-    "Directory does not exist" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Directory does not exist"
+    "Create": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目录不存在"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建"
           }
         }
       }
     },
-    "Directory is not empty (%lld items). Existing files will not be encrypted; please choose an empty directory" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Directory is not empty (%lld items). Existing files will not be encrypted; please choose an empty directory"
+    "Create New Vault": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create New Vault"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目录非空（%lld 项）。已有文件不会被加密，请另选一个空目录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建新 Vault"
           }
         }
       }
     },
-    "Empty directory, ready to create" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empty directory, ready to create"
+    "Create New Vault…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create New Vault…"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "空目录，可以创建"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建新 Vault…"
           }
         }
       }
     },
-    "Encrypted Directory" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Encrypted Directory"
+    "Directory does not exist": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directory does not exist"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "密文目录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目录不存在"
           }
         }
       }
     },
-    "Enter password (never stored anywhere)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter password (never stored anywhere)"
+    "Directory is not empty (%lld items). Existing files will not be encrypted; please choose an empty directory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directory is not empty (%lld items). Existing files will not be encrypted; please choose an empty directory"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入密码（不会储存在任何地方）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目录非空（%lld 项）。已有文件不会被加密，请另选一个空目录"
           }
         }
       }
     },
-    "Enter password for this vault" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter password for this vault"
+    "Empty directory, ready to create": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty directory, ready to create"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入这个卷的密码"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空目录，可以创建"
           }
         }
       }
     },
-    "Enter the same password again" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter the same password again"
+    "Encrypted Directory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encrypted Directory"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "再次输入同一密码"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密文目录"
           }
         }
       }
     },
-    "Expand" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expand"
+    "Enter password (never stored anywhere)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter password (never stored anywhere)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "展开"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入密码（不会储存在任何地方）"
           }
         }
       }
     },
-    "Extension is disabled" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Extension is disabled"
+    "Enter password for this vault": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter password for this vault"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "扩展已关闭"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入这个卷的密码"
           }
         }
       }
     },
-    "Extension is still starting up (known cold start behavior). Please click Mount again." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Extension is still starting up (known cold start behavior). Please click Mount again."
+    "Enter the same password again": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the same password again"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "扩展还在启动中（冷启动首次挂载的已知现象）。请再点一次挂载。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再次输入同一密码"
           }
         }
       }
     },
-    "Extension not registered" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Extension not registered"
+    "Expand": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "扩展未注册"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "展开"
           }
         }
       }
     },
-    "Extension status unknown" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Extension status unknown"
+    "Extension is disabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension is disabled"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "扩展状态未知"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扩展已关闭"
           }
         }
       }
     },
-    "Fair" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fair"
+    "Extension is still starting up (known cold start behavior). Please click Mount again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension is still starting up (known cold start behavior). Please click Mount again."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中等"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扩展还在启动中（冷启动首次挂载的已知现象）。请再点一次挂载。"
           }
         }
       }
     },
-    "FSKit extension is disabled by system; cannot mount volumes" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSKit extension is disabled by system; cannot mount volumes"
+    "Extension not registered": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension not registered"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSKit 扩展被系统关闭了，现在无法挂载任何卷"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扩展未注册"
           }
         }
       }
     },
-    "FSKit extension is disabled by system; cannot mount. Go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit, then try again." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSKit extension is disabled by system; cannot mount. Go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit, then try again."
+    "Extension status unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension status unknown"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSKit 扩展被系统关闭了，所以挂载不了。到「系统设置 → 通用 → 登录项与扩展 → 文件系统扩展」里打开 GocryptKit 再试。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扩展状态未知"
           }
         }
       }
     },
-    "FSKit extension is enabled" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSKit extension is enabled"
+    "Fair": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fair"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSKit 扩展已启用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中等"
           }
         }
       }
     },
-    "I have saved the password safely and understand it cannot be recovered if lost" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I have saved the password safely and understand it cannot be recovered if lost"
+    "FSKit extension is disabled by system; cannot mount volumes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FSKit extension is disabled by system; cannot mount volumes"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "我已妥善保存密码，明白丢失后无法恢复"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FSKit 扩展被系统关闭了，现在无法挂载任何卷"
           }
         }
       }
     },
-    "If the app was just installed or updated, quit and reopen it to register the extension. Then go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "If the app was just installed or updated, quit and reopen it to register the extension. Then go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit."
+    "FSKit extension is disabled by system; cannot mount. Go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FSKit extension is disabled by system; cannot mount. Go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit, then try again."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如果 App 是刚装好或刚更新的，退出再重新打开一次，系统就会登记它。之后再去「系统设置 → 通用 → 登录项与扩展 → 文件系统扩展」里打开 GocryptKit。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FSKit 扩展被系统关闭了，所以挂载不了。到「系统设置 → 通用 → 登录项与扩展 → 文件系统扩展」里打开 GocryptKit 再试。"
           }
         }
       }
     },
-    "Location for new vault (must be an empty directory):" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Location for new vault (must be an empty directory):"
+    "FSKit extension is enabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FSKit extension is enabled"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新建卷的位置 (必须是空目录):"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FSKit 扩展已启用"
           }
         }
       }
     },
-    "Lost password = permanent data loss" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lost password = permanent data loss"
+    "I have saved the password safely and understand it cannot be recovered if lost": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I have saved the password safely and understand it cannot be recovered if lost"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "密码丢失 = 数据永久无法恢复"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我已妥善保存密码，明白丢失后无法恢复"
           }
         }
       }
     },
-    "Make it longer; mix uppercase, lowercase, numbers, and symbols" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Make it longer; mix uppercase, lowercase, numbers, and symbols"
+    "If the app was just installed or updated, quit and reopen it to register the extension. Then go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If the app was just installed or updated, quit and reopen it to register the extension. Then go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加长，并混用大小写、数字和符号"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如果 App 是刚装好或刚更新的，退出再重新打开一次，系统就会登记它。之后再去「系统设置 → 通用 → 登录项与扩展 → 文件系统扩展」里打开 GocryptKit。"
           }
         }
       }
     },
-    "Mount" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mount"
+    "Location for new vault (must be an empty directory):": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location for new vault (must be an empty directory):"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建卷的位置 (必须是空目录):"
           }
         }
       }
     },
-    "Mount Point" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mount Point"
+    "Lost password = permanent data loss": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lost password = permanent data loss"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "挂载点"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密码丢失 = 数据永久无法恢复"
           }
         }
       }
     },
-    "Mounted" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mounted"
+    "Make it longer; mix uppercase, lowercase, numbers, and symbols": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make it longer; mix uppercase, lowercase, numbers, and symbols"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加长，并混用大小写、数字和符号"
           }
         }
       }
     },
-    "Name" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Name"
+    "Mount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mount"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名称"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "挂载"
           }
         }
       }
     },
-    "No Vaults Added Yet" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Vaults Added Yet"
+    "Mount Point": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mount Point"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "还没有添加任何加密卷"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "挂载点"
           }
         }
       }
     },
-    "No gocryptfs.conf found in %@; not a valid gocryptfs vault." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No gocryptfs.conf found in %@; not a valid gocryptfs vault."
+    "Mounted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mounted"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ 里没有 gocryptfs.conf，不是一个 gocryptfs 加密卷。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已挂载"
           }
         }
       }
     },
-    "Only removes list entry; data on disk is untouched." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Only removes list entry; data on disk is untouched."
+    "Name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "只移除列表项，不动磁盘上的数据。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
           }
         }
       }
     },
-    "Open" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open"
+    "No Vaults Added Yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Vaults Added Yet"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有添加任何加密卷"
           }
         }
       }
     },
-    "Open System Settings" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open System Settings"
+    "No gocryptfs.conf found in %@; not a valid gocryptfs vault.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No gocryptfs.conf found in %@; not a valid gocryptfs vault."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开系统设置"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 里没有 gocryptfs.conf，不是一个 gocryptfs 加密卷。"
           }
         }
       }
     },
-    "Password" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Password"
+    "Only removes list entry; data on disk is untouched.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only removes list entry; data on disk is untouched."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "密码"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只移除列表项，不动磁盘上的数据。"
           }
         }
       }
     },
-    "Password:" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Password:"
+    "Open": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "密码 (Password):"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开"
           }
         }
       }
     },
-    "Passwords do not match" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Passwords do not match"
+    "Open System Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "两次输入不一致"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开系统设置"
           }
         }
       }
     },
-    "Probe could not be completed. You can click 'Recheck' to try again; if mounting works normally, you can safely ignore this." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Probe could not be completed. You can click 'Recheck' to try again; if mounting works normally, you can safely ignore this."
+    "Password": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "探测没能完成。可以点「重新检查」再试一次；如果挂载能正常工作，忽略这条即可。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密码"
           }
         }
       }
     },
-    "Recheck" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recheck"
+    "Password:": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新检查"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密码 (Password):"
           }
         }
       }
     },
-    "Remove" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove"
+    "Passwords do not match": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passwords do not match"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移除"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "两次输入不一致"
           }
         }
       }
     },
-    "Remove \"%@\" from list?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove \"%@\" from list?"
+    "Probe could not be completed. You can click 'Recheck' to try again; if mounting works normally, you can safely ignore this.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probe could not be completed. You can click 'Recheck' to try again; if mounting works normally, you can safely ignore this."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从列表移除「%@」？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "探测没能完成。可以点「重新检查」再试一次；如果挂载能正常工作，忽略这条即可。"
           }
         }
       }
     },
-    "Remove from List…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove from List…"
+    "Recheck": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recheck"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从列表移除…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新检查"
           }
         }
       }
     },
-    "Reveal in Finder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reveal in Finder"
+    "Remove": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在访达中打开"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除"
           }
         }
       }
     },
-    "Hide password" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hide password"
+    "Remove \"%@\" from list?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove \"%@\" from list?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏密码"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从列表移除「%@」？"
           }
         }
       }
     },
-    "Set vault password" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Set vault password"
+    "Remove from List…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from List…"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置加密卷密码"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从列表移除…"
           }
         }
       }
     },
-    "Set vault password (never stored anywhere)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Set vault password (never stored anywhere)"
+    "Reveal in Finder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reveal in Finder"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置加密卷密码（不会储存在任何地方）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在访达中打开"
           }
         }
       }
     },
-    "Show password" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show password"
+    "Hide password": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide password"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示密码"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏密码"
           }
         }
       }
     },
-    "Strong" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Strong"
+    "Set vault password": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set vault password"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "强"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置加密卷密码"
           }
         }
       }
     },
-    "Sufficient strength" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sufficient strength"
+    "Set vault password (never stored anywhere)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set vault password (never stored anywhere)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "强度足够"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置加密卷密码（不会储存在任何地方）"
           }
         }
       }
     },
-    "System has not registered this extension yet" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System has not registered this extension yet"
+    "Show password": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show password"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统还不知道有这个扩展"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示密码"
           }
         }
       }
     },
-    "The vault's master key is only wrapped by this password and stored in gocryptfs.conf. There is no recovery code, no backdoor, and no one can recover it for you. Please save it in a password manager first." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The vault's master key is only wrapped by this password and stored in gocryptfs.conf. There is no recovery code, no backdoor, and no one can recover it for you. Please save it in a password manager first."
+    "Strong": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strong"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加密卷的主密钥只被这个密码包裹着保存在 gocryptfs.conf 里。没有恢复码，没有后门，任何人都无法帮你找回。请先把它存进密码管理器。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "强"
           }
         }
       }
     },
-    "This directory is already in the list (%@)." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This directory is already in the list (%@)."
+    "Sufficient strength": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sufficient strength"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这个密文目录已经在列表里了（%@）。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "强度足够"
           }
         }
       }
     },
-    "This is a file, not a directory" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This is a file, not a directory"
+    "System has not registered this extension yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System has not registered this extension yet"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这是一个文件，不是目录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统还不知道有这个扩展"
           }
         }
       }
     },
-    "This only removes it from this list. Encrypted directory and data will not be modified, and can be added back later." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This only removes it from this list. Encrypted directory and data will not be modified, and can be added back later."
+    "The vault's master key is only wrapped by this password and stored in gocryptfs.conf. There is no recovery code, no backdoor, and no one can recover it for you. Please save it in a password manager first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The vault's master key is only wrapped by this password and stored in gocryptfs.conf. There is no recovery code, no backdoor, and no one can recover it for you. Please save it in a password manager first."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "只把它从这个列表里去掉。密文目录和里面的数据不会被改动，以后还能重新添加回来。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加密卷的主密钥只被这个密码包裹着保存在 gocryptfs.conf 里。没有恢复码，没有后门，任何人都无法帮你找回。请先把它存进密码管理器。"
           }
         }
       }
     },
-    "This volume is currently mounted elsewhere, not at the registered location." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This volume is currently mounted elsewhere, not at the registered location."
+    "This directory is already in the list (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This directory is already in the list (%@)."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这个卷当前挂在别处，不是列表里记的位置。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个密文目录已经在列表里了（%@）。"
           }
         }
       }
     },
-    "Too short" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Too short"
+    "This is a file, not a directory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a file, not a directory"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "太短"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这是一个文件，不是目录"
           }
         }
       }
     },
-    "Unable to confirm extension status" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unable to confirm extension status"
+    "This only removes it from this list. Encrypted directory and data will not be modified, and can be added back later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This only removes it from this list. Encrypted directory and data will not be modified, and can be added back later."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法确认扩展是否可用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只把它从这个列表里去掉。密文目录和里面的数据不会被改动，以后还能重新添加回来。"
           }
         }
       }
     },
-    "Unmount" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unmount"
+    "This volume is currently mounted elsewhere, not at the registered location.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This volume is currently mounted elsewhere, not at the registered location."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卸载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个卷当前挂在别处，不是列表里记的位置。"
           }
         }
       }
     },
-    "Unmount before removing from the list." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unmount before removing from the list."
+    "Too short": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too short"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "先卸载才能从列表移除。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "太短"
           }
         }
       }
     },
-    "Unmounted" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unmounted"
+    "Unable to confirm extension status": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to confirm extension status"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未挂载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法确认扩展是否可用"
           }
         }
       }
     },
-    "Vault display name" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vault display name"
+    "Unmount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmount"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卷的显示名"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载"
           }
         }
       }
     },
-    "Weak" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weak"
+    "Unmount before removing from the list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmount before removing from the list."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "弱"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先卸载才能从列表移除。"
           }
         }
       }
     },
-    "About GocryptKit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About GocryptKit"
+    "Unmounted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmounted"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关于 GocryptKit"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未挂载"
           }
         }
       }
     },
-    "Language" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Language"
+    "Vault display name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vault display name"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "语言"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卷的显示名"
           }
         }
       }
     },
-    "System Language" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Language"
+    "Weak": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weak"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "跟随系统"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "弱"
           }
         }
       }
     },
-    "Simplified Chinese" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simplified Chinese"
+    "About GocryptKit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About GocryptKit"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体中文"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关于 GocryptKit"
           }
         }
       }
     },
-    "English" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "English"
+    "Language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "English"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语言"
           }
         }
       }
     },
-    "About" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About"
+    "System Language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Language"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关于"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟随系统"
           }
         }
       }
     },
-    "Settings…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings…"
+    "Simplified Chinese": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simplified Chinese"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体中文"
           }
         }
       }
     },
-    "Open GocryptKit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open GocryptKit"
+    "English": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开 GocryptKit 主窗口"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
           }
         }
       }
     },
-    "Quit GocryptKit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quit GocryptKit"
+    "About": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出 GocryptKit"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关于"
           }
         }
       }
     },
-    "There is 1 mounted vault. Quitting GocryptKit will unmount it. Do you want to continue?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "There is 1 mounted vault. Quitting GocryptKit will unmount it. Do you want to continue?"
+    "Settings…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings…"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前有 1 个已挂载的保管库。退出 GocryptKit 将会卸载它。是否继续？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置…"
           }
         }
       }
     },
-    "There are %lld mounted vaults. Quitting GocryptKit will unmount all of them. Do you want to continue?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "There are %lld mounted vaults. Quitting GocryptKit will unmount all of them. Do you want to continue?"
+    "Open GocryptKit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open GocryptKit"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前有 %lld 个已挂载的保管库。退出 GocryptKit 将会卸载所有保管库。是否继续？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 GocryptKit 主窗口"
           }
         }
       }
     },
-    "Unmount and Quit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unmount and Quit"
+    "Quit GocryptKit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit GocryptKit"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卸载并退出"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出 GocryptKit"
           }
         }
       }
     },
-    "Unmount before quitting?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unmount before quitting?"
+    "There is 1 mounted vault. Quitting GocryptKit will unmount it. Do you want to continue?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is 1 mounted vault. Quitting GocryptKit will unmount it. Do you want to continue?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出前卸载保管库？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前有 1 个已挂载的保管库。退出 GocryptKit 将会卸载它。是否继续？"
           }
         }
       }
     },
-    "Close Window" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close Window"
+    "There are %lld mounted vaults. Quitting GocryptKit will unmount all of them. Do you want to continue?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There are %lld mounted vaults. Quitting GocryptKit will unmount all of them. Do you want to continue?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭窗口"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前有 %lld 个已挂载的保管库。退出 GocryptKit 将会卸载所有保管库。是否继续？"
           }
         }
       }
     },
-    "Volume is in use by another application. Please close open files/Finder windows and try again." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volume is in use by another application. Please close open files/Finder windows and try again."
+    "Unmount and Quit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmount and Quit"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加密卷正被其他应用程序使用。请关闭占用的文件或访达窗口后重试。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载并退出"
           }
         }
       }
     },
-    "Permission denied accessing vault or mount directory." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Permission denied accessing vault or mount directory."
+    "Unmount before quitting?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmount before quitting?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "访问加密卷或挂载目录权限被拒绝。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出前卸载保管库？"
           }
         }
       }
     },
-    "Vault directory or mountpoint does not exist." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vault directory or mountpoint does not exist."
+    "Close Window": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Window"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加密卷目录或挂载点不存在。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭窗口"
           }
         }
       }
     },
-    "Mount point is already mounted or busy." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mount point is already mounted or busy."
+    "Volume is in use by another application. Please close open files/Finder windows and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume is in use by another application. Please close open files/Finder windows and try again."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "挂载点已被挂载或正忙。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加密卷正被其他应用程序使用。请关闭占用的文件或访达窗口后重试。"
           }
         }
       }
     },
-    "No Vaults Added" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Vaults Added"
+    "Permission denied accessing vault or mount directory.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission denied accessing vault or mount directory."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未添加加密卷"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "访问加密卷或挂载目录权限被拒绝。"
           }
         }
       }
     },
-    "Unmount All" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unmount All"
+    "Vault directory or mountpoint does not exist.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vault directory or mountpoint does not exist."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部卸载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加密卷目录或挂载点不存在。"
           }
         }
       }
     },
-    "Volume In Use" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volume In Use"
+    "Mount point is already mounted or busy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mount point is already mounted or busy."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加密卷正被占用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "挂载点已被挂载或正忙。"
           }
         }
       }
     },
-    "Vault \"%@\" is currently in use by another application. Please close related files or Finder windows and try again." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vault \"%@\" is currently in use by another application. Please close related files or Finder windows and try again."
+    "No Vaults Added": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Vaults Added"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卷“%@”正被其他应用程序使用，请关闭相关文件或访达窗口后重试。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未添加加密卷"
           }
         }
       }
     },
-    "Force Unmount" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Force Unmount"
+    "Unmount All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmount All"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "强制卸载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部卸载"
           }
         }
       }
     },
-    "Force Unmount Failed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Force Unmount Failed"
+    "Volume In Use": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume In Use"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "强制卸载失败"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加密卷正被占用"
           }
         }
       }
     },
-    "Unmount Failed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unmount Failed"
+    "Vault \"%@\" is currently in use by another application. Please close related files or Finder windows and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vault \"%@\" is currently in use by another application. Please close related files or Finder windows and try again."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卸载失败"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卷“%@”正被其他应用程序使用，请关闭相关文件或访达窗口后重试。"
           }
         }
       }
     },
-    "Unmounting…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unmounting…"
+    "Force Unmount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Force Unmount"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在卸载…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "强制卸载"
           }
         }
       }
     },
-    "Volumes In Use" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volumes In Use"
+    "Force Unmount Failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Force Unmount Failed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "多个加密卷正被占用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "强制卸载失败"
           }
         }
       }
     },
-    "The following vaults are currently in use by other applications: %@\nPlease close related files or Finder windows and try again." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The following vaults are currently in use by other applications: %@\nPlease close related files or Finder windows and try again."
+    "Unmount Failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmount Failed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以下加密卷正被其他应用程序使用：%@\n请关闭相关文件或访达窗口后重试。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载失败"
           }
         }
       }
     },
-    "Force Unmount All" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Force Unmount All"
+    "Unmounting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmounting…"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部强制卸载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在卸载…"
           }
         }
       }
     },
-    "Failed to force unmount: %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to force unmount: %@"
+    "Volumes In Use": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volumes In Use"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "强制卸载失败：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多个加密卷正被占用"
           }
         }
       }
     },
-    "GocryptKit (1 vault mounted)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GocryptKit (1 vault mounted)"
+    "The following vaults are currently in use by other applications: %@\nPlease close related files or Finder windows and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The following vaults are currently in use by other applications: %@\nPlease close related files or Finder windows and try again."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GocryptKit（已挂载 1 个加密卷）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以下加密卷正被其他应用程序使用：%@\n请关闭相关文件或访达窗口后重试。"
           }
         }
       }
     },
-    "GocryptKit (%lld vaults mounted)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GocryptKit (%lld vaults mounted)"
+    "Force Unmount All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Force Unmount All"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GocryptKit（已挂载 %lld 个加密卷）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部强制卸载"
+          }
+        }
+      }
+    },
+    "Failed to force unmount: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to force unmount: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "强制卸载失败：%@"
+          }
+        }
+      }
+    },
+    "GocryptKit (1 vault mounted)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GocryptKit (1 vault mounted)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GocryptKit（已挂载 1 个加密卷）"
+          }
+        }
+      }
+    },
+    "GocryptKit (%lld vaults mounted)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GocryptKit (%lld vaults mounted)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GocryptKit（已挂载 %lld 个加密卷）"
+          }
+        }
+      }
+    },
+    "Weak Password Warning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weak Password Warning"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "弱密码警告"
+          }
+        }
+      }
+    },
+    "The chosen password is short or weak, which makes the vault susceptible to offline brute-force attacks. Are you sure you want to continue?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The chosen password is short or weak, which makes the vault susceptible to offline brute-force attacks. Are you sure you want to continue?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前密码较短或强度较弱，可能存在被离线穷举破解的风险。是否确认继续创建？"
+          }
+        }
+      }
+    },
+    "Continue Creation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue Creation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仍然继续创建"
+          }
+        }
+      }
+    },
+    "Directory will be created automatically": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directory will be created automatically"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将自动创建该目录"
+          }
+        }
+      }
+    },
+    "Always mount as read-only by default (saved to preferences)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always mount as read-only by default (saved to preferences)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始终默认以只读模式挂载 (保存至偏好设置)"
+          }
+        }
+      }
+    },
+    "Mount in read-write mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mount in read-write mode"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以读写模式挂载"
+          }
+        }
+      }
+    },
+    "Mount in read-only mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mount in read-only mode"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以只读模式挂载"
+          }
+        }
+      }
+    },
+    "Temporary read-only for this mount only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporary read-only for this mount only"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅本次临时只读"
+          }
+        }
+      }
+    },
+    "Hide GocryptKit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide GocryptKit"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏 GocryptKit"
+          }
+        }
+      }
+    },
+    "Hide Others": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Others"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏其他"
+          }
+        }
+      }
+    },
+    "Show All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show All"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示全部"
+          }
+        }
+      }
+    },
+    "File": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件"
+          }
+        }
+      }
+    },
+    "Edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑"
+          }
+        }
+      }
+    },
+    "Undo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撤销"
+          }
+        }
+      }
+    },
+    "Redo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重做"
+          }
+        }
+      }
+    },
+    "Cut": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cut"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪切"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拷贝"
+          }
+        }
+      }
+    },
+    "Paste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴"
+          }
+        }
+      }
+    },
+    "Select All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select All"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全选"
+          }
+        }
+      }
+    },
+    "Window": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Window"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "窗口"
+          }
+        }
+      }
+    },
+    "Minimize": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimize"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最小化"
+          }
+        }
+      }
+    },
+    "Zoom": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoom"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缩放"
+          }
+        }
+      }
+    },
+    "Close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

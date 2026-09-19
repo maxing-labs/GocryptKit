@@ -1,7 +1,9 @@
+import AppKit
 import Foundation
 import Observation
 import VaultCore
 
+@MainActor
 @Observable
 final class VaultRowViewModel: @unchecked Sendable {
     var isBusy: Bool = false
@@ -18,7 +20,7 @@ final class VaultRowViewModel: @unchecked Sendable {
         let pwd = password
         let ro = readOnly
 
-        Task.detached(priority: .userInitiated) {
+        Task {
             do {
                 try await MountManager.shared.mountVault(
                     cipherDir: cipherDir,
@@ -26,44 +28,73 @@ final class VaultRowViewModel: @unchecked Sendable {
                     password: pwd,
                     readOnly: ro
                 )
-                await MainActor.run {
-                    self.isBusy = false
-                    store.refreshMountState()
-                }
+                self.isBusy = false
+                store.refreshMountState()
             } catch {
-                await MainActor.run {
-                    self.isBusy = false
-                    self.errorMessage = Self.humanize(error)
-                    MountManager.shared.noteMountFailure(error.localizedDescription)
-                    store.refreshMountState()
-                }
+                self.isBusy = false
+                self.errorMessage = Self.humanize(error)
+                MountManager.shared.noteMountFailure(error.localizedDescription)
+                store.refreshMountState()
             }
         }
     }
 
-    func performUnmount(vault: Vault, actualMountPoint: String?, store: VaultStore) {
+    func performUnmount(
+        vault: Vault,
+        actualMountPoint: String?,
+        store: VaultStore,
+        onExpand: (@MainActor () -> Void)? = nil
+    ) {
         errorMessage = nil
         canForceUnmount = false
         isBusy = true
-        let target = URL(fileURLWithPath: actualMountPoint ?? vault.mountPointPath)
+        let resolvedPath = actualMountPoint
+            ?? store.actualMountPoint(vault)
+            ?? (store.isReadOnly(vault) ? vault.readOnlyMountPointPath : nil)
+            ?? vault.mountPointPath
+        let target = URL(fileURLWithPath: resolvedPath)
 
-        Task.detached(priority: .userInitiated) {
+        Task {
             do {
-                try MountManager.shared.unmountVault(mountPoint: target)
-                await MainActor.run {
-                    self.isBusy = false
-                    self.canForceUnmount = false
-                    store.refreshMountState()
-                }
+                try await Task.detached(priority: .userInitiated) {
+                    try MountManager.shared.unmountVault(mountPoint: target)
+                }.value
+                self.isBusy = false
+                self.canForceUnmount = false
+                store.refreshMountState()
             } catch {
-                await MainActor.run {
-                    self.isBusy = false
-                    self.errorMessage = Self.humanizeUnmountError(error)
-                    let raw = error.localizedDescription.lowercased()
-                    if raw.contains("busy") || raw.contains("in use") {
-                        self.canForceUnmount = true
+                self.isBusy = false
+                self.errorMessage = Self.humanizeUnmountError(error)
+                let raw = error.localizedDescription.lowercased()
+                let isBusy = raw.contains("busy") || raw.contains("in use")
+                if isBusy {
+                    self.canForceUnmount = true
+                }
+                store.refreshMountState()
+
+                if isBusy {
+                    let alert = NSAlert()
+                    alert.alertStyle = .warning
+                    alert.messageText = loc("Volume In Use")
+                    alert.informativeText = loc("Vault \"\(vault.name)\" is currently in use by another application. Please close related files or Finder windows and try again.")
+                    alert.addButton(withTitle: loc("Cancel"))
+                    alert.addButton(withTitle: loc("Force Unmount"))
+
+                    NSApp.activate(ignoringOtherApps: true)
+                    let response = alert.runModal()
+                    if response == .alertSecondButtonReturn {
+                        self.performForceUnmount(vault: vault, actualMountPoint: resolvedPath, store: store)
+                    } else {
+                        onExpand?()
                     }
-                    store.refreshMountState()
+                } else {
+                    onExpand?()
+                    let alert = NSAlert()
+                    alert.alertStyle = .warning
+                    alert.messageText = loc("Unmount Failed")
+                    alert.informativeText = Self.humanizeUnmountError(error)
+                    NSApp.activate(ignoringOtherApps: true)
+                    alert.runModal()
                 }
             }
         }
@@ -72,22 +103,31 @@ final class VaultRowViewModel: @unchecked Sendable {
     func performForceUnmount(vault: Vault, actualMountPoint: String?, store: VaultStore) {
         errorMessage = nil
         isBusy = true
-        let target = URL(fileURLWithPath: actualMountPoint ?? vault.mountPointPath)
+        let resolvedPath = actualMountPoint
+            ?? store.actualMountPoint(vault)
+            ?? (store.isReadOnly(vault) ? vault.readOnlyMountPointPath : nil)
+            ?? vault.mountPointPath
+        let target = URL(fileURLWithPath: resolvedPath)
 
-        Task.detached(priority: .userInitiated) {
+        Task {
             do {
-                try MountManager.shared.unmountVault(mountPoint: target, force: true)
-                await MainActor.run {
-                    self.isBusy = false
-                    self.canForceUnmount = false
-                    store.refreshMountState()
-                }
+                try await Task.detached(priority: .userInitiated) {
+                    try MountManager.shared.unmountVault(mountPoint: target, force: true)
+                }.value
+                self.isBusy = false
+                self.canForceUnmount = false
+                store.refreshMountState()
             } catch {
-                await MainActor.run {
-                    self.isBusy = false
-                    self.errorMessage = Self.humanizeUnmountError(error)
-                    store.refreshMountState()
-                }
+                self.isBusy = false
+                self.errorMessage = Self.humanizeUnmountError(error)
+                store.refreshMountState()
+
+                let failAlert = NSAlert()
+                failAlert.alertStyle = .critical
+                failAlert.messageText = loc("Force Unmount Failed")
+                failAlert.informativeText = error.localizedDescription
+                NSApp.activate(ignoringOtherApps: true)
+                failAlert.runModal()
             }
         }
     }

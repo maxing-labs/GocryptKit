@@ -10,7 +10,9 @@ final class MountManager: @unchecked Sendable {
 
     /// Operational availability of the FSKit module from the kernel's perspective.
     /// Initialized to `.unknown`: probing takes 1-2 seconds, and we avoid guessing beforehand.
+    @MainActor
     var extensionStatus: FSModuleStatus = .unknown
+    @MainActor
     var isExtensionEnabled: Bool { extensionStatus == .enabled }
 
     static let extensionIdentifier = "com.xwei.GocryptfsKit.AppEx"
@@ -43,11 +45,22 @@ final class MountManager: @unchecked Sendable {
     /// module is enabled. If the module turns out to be disabled, the
     /// actual mount failure will update the status via `noteMountFailure`.
     func checkExtensionStatus() {
-        guard MountTable.gocryptfsMounts().isEmpty else {
-            extensionStatus = .enabled
-            return
+        let newStatus: FSModuleStatus
+        if !MountTable.gocryptfsMounts().isEmpty {
+            newStatus = .enabled
+        } else {
+            newStatus = Self.probeExtensionStatus()
         }
-        extensionStatus = Self.probeExtensionStatus()
+
+        if Thread.isMainThread {
+            MainActor.assumeIsolated {
+                self.extensionStatus = newStatus
+            }
+        } else {
+            DispatchQueue.main.async {
+                self.extensionStatus = newStatus
+            }
+        }
     }
 
     private static func probeExtensionStatus() -> FSModuleStatus {
@@ -66,7 +79,15 @@ final class MountManager: @unchecked Sendable {
     /// relieving the user from manually triggering a refresh to see the true state.
     func noteMountFailure(_ message: String) {
         if FSModuleProbe.interpret(mountStderr: message) == .disabled {
-            extensionStatus = .disabled
+            if Thread.isMainThread {
+                MainActor.assumeIsolated {
+                    self.extensionStatus = .disabled
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.extensionStatus = .disabled
+                }
+            }
         }
     }
 
@@ -99,6 +120,14 @@ final class MountManager: @unchecked Sendable {
         }
     }
 
+    private var isExtensionExplicitlyDisabled: Bool {
+        if Thread.isMainThread {
+            return MainActor.assumeIsolated { extensionStatus == .disabled }
+        } else {
+            return DispatchQueue.main.sync { extensionStatus == .disabled }
+        }
+    }
+
     /// Asynchronous mount with non-blocking retry delays (for GUI).
     func mountVault(cipherDir: URL, mountPoint: URL, password: String, readOnly: Bool = false) async throws {
         let targetMountPoint = readOnly ? URL(fileURLWithPath: Vault.readOnlyMountPoint(for: mountPoint.path)) : mountPoint
@@ -123,7 +152,7 @@ final class MountManager: @unchecked Sendable {
             } catch {
                 lastError = error
                 noteMountFailure(error.localizedDescription)
-                if extensionStatus == .disabled {
+                if isExtensionExplicitlyDisabled {
                     break
                 }
                 logger.info("mount attempt \(attempt, privacy: .public) of \(Self.mountAttempts, privacy: .public) failed")
@@ -163,7 +192,7 @@ final class MountManager: @unchecked Sendable {
             } catch {
                 lastError = error
                 noteMountFailure(error.localizedDescription)
-                if extensionStatus == .disabled {
+                if isExtensionExplicitlyDisabled {
                     break
                 }
                 logger.info("mount attempt \(attempt, privacy: .public) of \(Self.mountAttempts, privacy: .public) failed")
@@ -180,38 +209,6 @@ final class MountManager: @unchecked Sendable {
 
     private static let mountAttempts = 3
     private static let mountRetryDelay: TimeInterval = 2
-    private static let processTimeoutSeconds: TimeInterval = 15.0
-
-    /// Executes a system command with strict timeout protection to prevent process hangs.
-    private static func runProcessWithTimeout(executable: String, arguments: [String], timeout: TimeInterval = processTimeoutSeconds) throws -> (status: Int32, stderr: String) {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: executable)
-        task.arguments = arguments
-        let errPipe = Pipe()
-        task.standardError = errPipe
-
-        try task.run()
-
-        let deadline = Date().addingTimeInterval(timeout)
-        while task.isRunning && Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.05)
-        }
-
-        if task.isRunning {
-            task.terminate()
-            let termDeadline = Date().addingTimeInterval(1.0)
-            while task.isRunning && Date() < termDeadline {
-                Thread.sleep(forTimeInterval: 0.05)
-            }
-            throw NSError(domain: NSPOSIXErrorDomain, code: Int(ETIMEDOUT), userInfo: [
-                NSLocalizedDescriptionKey: "Command '\(executable)' timed out after \(Int(timeout)) seconds."
-            ])
-        }
-
-        let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
-        let errMsg = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return (task.terminationStatus, errMsg)
-    }
 
     private static func runMount(cipherDir: URL, mountPoint: URL, readOnly: Bool = false) throws {
         let volName = mountPoint.lastPathComponent.replacingOccurrences(of: ",", with: "_")
@@ -235,7 +232,7 @@ final class MountManager: @unchecked Sendable {
         mountOptions.append("volname=\(volName)")
         args.append(contentsOf: ["-o", mountOptions.joined(separator: ",")])
         args.append(contentsOf: [cipherDir.path, mountPoint.path])
-        let (status, errMsg) = try runProcessWithTimeout(
+        let (status, errMsg) = try ProcessRunner.runWithTimeout(
             executable: "/sbin/mount",
             arguments: args
         )
@@ -254,7 +251,8 @@ final class MountManager: @unchecked Sendable {
 
         let orphans = OrphanReaper.accountsToReap(
             knownVaultPaths: knownVaults.map(\.cipherDirPath),
-            mountedCanonicalKeys: currentMounts.union(inFlight)
+            mountedCanonicalKeys: currentMounts.union(inFlight),
+            includeMountContext: true
         )
         for key in orphans {
             KeychainStore.deleteCredential(account: key)
@@ -263,7 +261,7 @@ final class MountManager: @unchecked Sendable {
 
     func unmountVault(mountPoint: URL, force: Bool = false) throws {
         let args = force ? ["-f", mountPoint.path] : [mountPoint.path]
-        let (status, errMsg) = try Self.runProcessWithTimeout(
+        let (status, errMsg) = try ProcessRunner.runWithTimeout(
             executable: "/sbin/umount",
             arguments: args
         )

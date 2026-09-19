@@ -94,7 +94,7 @@ final class GocryptfsFileSystem: FSUnaryFileSystem, FSUnaryFileSystemOperations,
         var engine: GocryptfsEngine? = nil
 
         func tryCredential(account: String) -> GocryptfsEngine? {
-            guard let data = KeychainReader.loadCredential(account: account) else {
+            guard let data = KeychainStore.loadCredential(account: account) else {
                 logger.error("tryCredential: loadCredential returned nil for account \(account, privacy: .private)")
                 return nil
             }
@@ -126,9 +126,9 @@ final class GocryptfsFileSystem: FSUnaryFileSystem, FSUnaryFileSystemOperations,
             // Clean up any credential even on auth failure to prevent
             // brute-force dictionary remnants lingering in the Keychain.
             if let uuid = vaultUUID {
-                KeychainReader.deleteCredential(account: uuid)
+                KeychainStore.deleteCredential(account: uuid)
             }
-            KeychainReader.deleteCredential(account: Vault.canonicalKey(path: urlResource.url.path))
+            KeychainStore.deleteCredential(account: Vault.canonicalKey(path: urlResource.url.path))
             urlResource.url.stopAccessingSecurityScopedResource()
             self.resource = nil
             return replyHandler(nil, POSIXError(.EACCES))
@@ -138,9 +138,9 @@ final class GocryptfsFileSystem: FSUnaryFileSystem, FSUnaryFileSystemOperations,
         // the credential from the Keychain immediately. Even if the
         // volume is ejected from Finder or umount, no secret remains.
         if let uuid = vaultUUID {
-            KeychainReader.deleteCredential(account: uuid)
+            KeychainStore.deleteCredential(account: uuid)
         }
-        KeychainReader.deleteCredential(account: Vault.canonicalKey(path: urlResource.url.path))
+        KeychainStore.deleteCredential(account: Vault.canonicalKey(path: urlResource.url.path))
 
         do {
             let vol = try GocryptfsVolume(engine: activeEngine, cipherURL: urlResource.url, volumeName: customVolName, isReadOnly: isReadOnly)

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Art/AppIcon.png" width="128" height="128" alt="GocryptKit 图标">
+</p>
+
 # GocryptKit
 
 在 macOS 上原生挂载 [gocryptfs](https://github.com/rfjakob/gocryptfs) 加密卷，基于 Apple 现代原生 **FSKit** 框架。
@@ -27,24 +31,142 @@
 
 ## 下载与体验
 
-**v1.2.5** — 质量加固、安全性与易用性提升版本（macOS Apple Silicon）
+**v1.3.7** — 卸载可靠性、UI 交互与易用性增强版（macOS Apple Silicon）
 
-→ [前往 GitHub Releases 页面下载](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.2.5)
+→ [前往 GitHub Releases 页面下载](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.3.7)
 
 | 项 | 值 |
 |---|---|
-| 文件 | `GocryptKit-1.2.5.dmg` |
+| 文件 | `GocryptKit-1.3.7.dmg` |
 | 架构 | Apple Silicon (`arm64-only`) |
 | 签名 | Developer ID Application（已通过苹果官方公证 Notarized & Stapled） |
 
 校验 DMG 安装包：
 
 ```bash
-shasum -a 256 GocryptKit-1.2.5.dmg
-spctl -a -t open --context context:primary-signature -vv GocryptKit-1.2.5.dmg
+shasum -a 256 GocryptKit-1.3.7.dmg
+spctl -a -t open --context context:primary-signature -vv GocryptKit-1.3.7.dmg
 ```
 
 安装步骤见下面的[安装后第一次使用](#安装后第一次使用)。
+
+---
+
+## 版本更新历史 (What's New)
+
+### v1.3.7 (2026-09-19) — 卸载可靠性与 UI 交互增强版
+- **卸载可靠性与交互对齐**：
+  - **宗卷占用弹窗与强制卸载**：彻底修复主界面折叠状态下卸载被占用宗卷时“转圈 1 秒无反应”问题。当加密卷文件正被其他 App（如播放器、访达或终端）打开时，主界面卸载会立即弹出原生警告对话框，提供“强制卸载”快捷操作，与菜单栏托盘行为 100% 对齐；
+  - **异常时自动展开**：卸载遇阻或取消后，卡片自动展开并就地高亮错误诊断与“强制卸载…”按钮，确保用户随时获知状态；
+  - **挂载路径回退兜底**：加固挂载点路径解析，自动探测只读后缀（`_READ_ONLY`）与内核实时挂载表，杜绝因路径漂移导致的卸载失败。
+- **UI 布局优化**：
+  - **挂载模式 Switch 开关升级**：将原先易引起语义歧义的“仅本次临时只读”复选框全面重构为直观的原生 Switch 开关。开启（ON）即以读写模式挂载，关闭（OFF）即以只读模式挂载，带有动态警示橙色与挂载按钮/路径预览实时联动；
+  - **密码错误提示就地呈现**：修复解锁失败（密码或主密钥错误）时提示文字被甩在卡片最底部的视觉缺陷。错误提示现直接在密码输入框下方就地高亮呈现，且在用户修改密码时自动清除；
+  - **“名称”输入框移至底部**：将低频重命名操作下移至卡片最底部，突显高频的密码挂载与路径信息。
+
+### v1.3.6 (2026-09-19) — UI 交互优化与多语言体验版
+- **UI 交互优化**：
+  - **展开卡片密码框置顶**：将密码输入框、挂载按钮与临时只读复选框移至展开卡片最顶端，展开时第一时间聚焦密码输入；
+  - **“名称”输入框移至底部**：将日常低频使用的卷“名称”重命名输入框下移至详情最底部，使视觉重心完全集中于挂载与路径；
+  - **移除卡片键盘焦点蓝框**：彻底移除卷卡片外层键盘获焦高亮蓝框，恢复原生简洁分割边框。
+- **本地化修复**：
+  - 修复大写锁定（Caps Lock）状态提示气泡偶发 `localized string not found` 问题，完善 `AppleLanguages` 包含 `zh-CN` 与 `en` 的回退链条，并在工程中配置 `CFBundleLocalizations`；
+  - 补齐密码最少 4 字符静态校验及大写锁定状态本地化词条。
+- **构建与质量**：
+  - Apple 官方签名与公证装订 DMG（`GocryptKit-1.3.6.dmg`），104 项单元测试与 108 项端到端（E2E）验收全绿。
+
+### v1.3.5 (2026-09-19) — 质量加固、并发可靠性与安全正式版
+- **安全加固**：
+  - 新建卷弱密码二次强警告确认弹窗（<8 字符或强度较弱），在兼顾弹性密码策略的同时严防误设弱口令；
+  - `OrphanReaper` 孤儿凭据清扫扩展支持只读会话临时凭据（`mountctx:`），在应用退出与启动时深度扫除；
+  - 彻底移除 `KeychainHelper` 与 `KeychainReader` 冗余 Facade，全工程直接统一定位 `VaultCore.KeychainStore`。
+- **并发与防管道死锁**：
+  - 引入 Swift 6 并发安全 `LockedBuffer`，在 `ProcessRunner` 中通过 `readabilityHandler` 异步流式排空子进程 stderr，根除超过 64 KiB 时的操作系统管道死锁；
+  - 将 `MountManager` 中重复的超时子进程运行器收敛至 `ProcessRunner`；
+  - 将 `MountManager.extensionStatus` 严格收归 `@MainActor` 并增加并发安全的内部辅助属性，杜绝后台轮询与 UI 渲染竞争。
+- **体验与本地化**：
+  - 只读挂载分级文案明确区分“持久只读配置”与“仅本次临时只读”；
+  - 新建加密卷时若父级目录不存在，输入时友好提示并在创建时自动递归建树；
+  - macOS 系统顶栏菜单（编辑、窗口、撤销/重做、剪切/复制/粘贴、全选等）全量支持中英文动态本地化；
+  - 卷列表卡片支持 `.focusable()` 键盘焦点高亮与空格键（Space）展开折叠。
+- **质量验证**：104 项单元测试 + 108 项端到端（E2E）验收全绿，Apple 官方公证与装订。
+
+### v1.3.4 — 多语言冷启动同步与只读拦截回归
+- 修复语言切换冷启动偶发不同步问题，确保 App 首选语言与 `AppleLanguages` 实时同步；
+- 扩展 E2E 测试链路，严格覆盖只读卷内核级写入拦截（touch/mkdir/append/rename/chmod/rm）。
+
+### v1.3.0 – v1.3.3 — 只读 Finder 显示与打包流水线优化
+- 通过共享 Keychain 挂载意图上下文（`MountContextStore`），确保只读卷在 Finder 窗口标题和侧边栏准确显示 `_READ_ONLY` 后缀；
+- 健壮解析 FSKit 复合挂载参数（`ro`, `rdonly`, `volname`）；
+- 优化发布流水线，增加公证超时自动重试与 `create-dmg` 无窗口模式降级。
+
+### v1.2.5 — 纵深防御与安全卸载
+- 在 App 退出阶段增加防御性强制卸载（`umount -f`）兜底机制，杜绝卷残留；
+- 在标准「关于」面板中补充开源仓库与技术文档直达链接。
+
+### v1.2.4 — 首个正式开源发布版
+- 正式在 GitHub 开源（[maxing-labs/GocryptKit](https://github.com/maxing-labs/GocryptKit)），采用 GPL-3.0 附带 Apple App Store 商业例外授权；
+- 状态栏增强：增加卸载防重置灰、并发互锁，以及批量卸载遭遇 `EBUSY` 时的集中合并告警；
+- 密码策略由强制阻断优化为弹性告警角标；
+- 全工程代码注释英文化重构。
+
+### v1.2.0 — 架构解耦与审查整改
+- 针对代码审查意见重构核心模块，增强代码分层与职责分离。
+
+### v1.1.2 — 媒体 Seek 修复与退出拦截
+- 底层 Go C-API 实现分块循环读取（Chunked Read Loop），根除大视频文件随机 Seek 与 Python `pread` 报 `EIO`（输入输出错误）的问题；
+- 读写底层文件描述符彻底物理分离，独立引用计数与读写锁；
+- 新增 App 退出时拦截挂载卷保护提示；
+- 修复卸载时焦点被强行窃取至密码框的体验问题。
+
+### v1.1.0 — 严格 TLV 凭据协议与架构重构
+- 引入 VCP1 严格 TLV Tagged 凭据协议，断言长度并丢弃多余残余数据，杜绝密码与 32 字节 Scrypt 哈希类型混淆；
+- 视图拆分为 `ContentView`、`VaultRowView`、`VaultRowViewModel` 与 `MountManager`；
+- 单元测试增至 90 项。
+
+### v1.0.1 — 菜单栏常驻与自动聚焦
+- 新增 MenuBar 状态栏动态开锁图标（`lock.open.fill` / `lock.fill`）；
+- 展开卷卡片时密码框自动聚焦；
+- 完成大文件高负载读写压测。
+
+### v1.0.0 — 项目更名与闭环里程碑
+- 项目正式更名为 `GocryptKit`；
+- 打包首个完整公证的 macOS DMG；
+- 建立全套安全规范、架构文档（`AGENTS.md`）与开源净化导出流水线。
+
+### v0.2.3 — 深度安全加固版
+- 引入 TLV Tagged Keychain 协议与即用即焚销毁机制（`deleteCredential`）；
+- 实现平台无关的纯逻辑 `OrphanReaper` 孤儿凭据收割算法；
+- 核心敏感内存强制 `memset_s` 清零；
+- 废除 `--password` 明文传参，改为无回显输入或 `--password-stdin`；
+- 配置注册表强制 `0600` POSIX 权限。
+
+### v0.2.2 — 国际化与界面优化
+- 支持中英文双语本地化；
+- 增加密码明文/密文切换查看按钮；
+- 探索 iOS/iPadOS 原型架构。
+
+### v0.2.1 — 鲁棒性与扩展状态检测修复
+- 解耦发布烟囱测试与实时扩展状态依赖；
+- 修复在卷已挂载时错误探测 FSKit 模块引发的虚假报错。
+
+### v0.2.0 — 多卷管理与独立图标
+- SwiftUI 实现多卷列表与空状态引导；
+- 确立「文件夹+钥匙」独立 App 图标设计；
+- 采用 `pluginkit` 安全检测扩展注册。
+
+### v0.1.0 — 首个可分发里程碑
+- 首个可分发的苹果公证版 DMG；
+- 实现原生 FSKit 读写 gocryptfs 卷、宿主 App 与 CLI 工具；
+- 确立 Developer ID 内外层自底向上签名流水线与初始 87 项端到端验收用例。
+
+### 早期孵化里程碑 (M0 – M2.5)
+- **M2.5**：Host 与 FSKit 扩展间 Keychain 凭据安全通道第一代；CLI 安全改造（废除明文传参，改为无回显输入与管道模式）；中英文双语框架初版。
+- **M2**：完整读写文件系统变动（增删改查）；macOS 原生扩展属性（xattr）经 EME+DirIV 加密落盘；`.fseventsd/no_log` 日志抑制。
+- **M1.5**：可复现 Developer ID 签名流水线；Apple 官方公证（notarytool）与装订自动化；编写覆盖真实媒体（PDF、MP3、MP4、文本）的端到端集成测试套件。
+- **M1**：只读 FSKit 卷核心实现，成功在无需任何驱动或内核扩展的情况下将 gocryptfs 挂载进 Finder。
+- **M0.5**：FSKit 模块注册、生命周期管理与文件系统模块（`FSFileSystem`）烟囱打通。
+- **M0**：底层 Go 引擎编译（`libgocryptfs` darwin/arm64 c-archive 并打成 `libgocryptfs.xcframework`）、`VaultCore` Swift 核心库骨架与 `vaultctl` 测试命令行。
 
 ---
 
@@ -92,8 +214,8 @@ echo "your-password" | /Applications/GocryptKit.app/Contents/MacOS/GocryptKit in
 ### 源码构建步骤
 
 ```bash
-git clone https://github.com/maxing-labs/GocryptKit.git
-cd GocryptKit
+git clone https://github.com/maxing-labs/gocryptfs-kit.git
+cd gocryptfs-kit
 
 # 1. 编译 Go 核心引擎 (darwin arm64 c-archive)
 Engine/build-darwin.sh
@@ -120,17 +242,17 @@ xcodebuild -project GocryptKit.xcodeproj -scheme GocryptKit \
 Scripts/build-dmg.sh
 ```
 
-产物将输出至 `build/dist/GocryptKit-1.2.5.dmg`。
+产物将输出至 `build/dist/GocryptKit-1.3.7.dmg`。
 
 ---
 
 ## 测试
 
 ```bash
-# 运行 VaultCore 单元测试套件 (95 项断言，含加密与 TLV 凭据协议验证)
+# 运行 VaultCore 单元测试套件 (104 项断言，含加密、TLV 凭据协议与 OrphanReaper 验证)
 swift test --package-path Packages/VaultCore
 
-# 运行端到端验收脚本 (需先安装 App 并在系统设置中启用扩展)
+# 运行端到端验收脚本 (108 项断言，需先安装 App 并在系统设置中启用扩展)
 Tests/e2e/make-samples.sh
 Tests/e2e/run-e2e.sh
 ```

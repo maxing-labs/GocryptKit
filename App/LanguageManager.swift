@@ -25,13 +25,28 @@ public final class LanguageManager: ObservableObject, @unchecked Sendable {
         self.currentLocale = activeLocale
     }
 
+    private static func appleLanguages(for lang: String) -> [String]? {
+        switch lang {
+        case "zh-Hans":
+            // System frameworks like AppKit/AuthenticationServices use zh_CN.lproj, not zh-Hans.lproj.
+            // Provide a full fallback hierarchy including zh-CN and en to prevent "localized string not found".
+            return ["zh-Hans", "zh-CN", "zh", "en"]
+        case "en":
+            return ["en"]
+        case "system":
+            return nil
+        default:
+            return [lang, "en"]
+        }
+    }
+
     /// Synchronizes AppleLanguages at app startup before NSApplication initializes.
     public func syncStartupLanguage() {
         let saved = UserDefaults.standard.string(forKey: "appLanguage") ?? "system"
-        if saved == "system" {
-            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        if let langs = Self.appleLanguages(for: saved) {
+            UserDefaults.standard.set(langs, forKey: "AppleLanguages")
         } else {
-            UserDefaults.standard.set([saved], forKey: "AppleLanguages")
+            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
         }
         syncInternal(lang: saved, syncAppleLanguages: false)
         self.currentLanguage = saved
@@ -89,10 +104,10 @@ public final class LanguageManager: ObservableObject, @unchecked Sendable {
 
         UserDefaults.standard.set(lang, forKey: "appLanguage")
         if syncAppleLanguages {
-            if lang == "system" {
-                UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+            if let langs = Self.appleLanguages(for: lang) {
+                UserDefaults.standard.set(langs, forKey: "AppleLanguages")
             } else {
-                UserDefaults.standard.set([lang], forKey: "AppleLanguages")
+                UserDefaults.standard.removeObject(forKey: "AppleLanguages")
             }
         }
     }
