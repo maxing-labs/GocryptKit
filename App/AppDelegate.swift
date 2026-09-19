@@ -19,6 +19,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mb.setupStatusItem()
         self.menuBarManager = mb
 
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleLanguageDidChange),
+            name: .appLanguageDidChange,
+            object: nil
+        )
+
         let contentView = ContentView(store: store)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 560, height: 420),
@@ -78,6 +85,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ])
     }
 
+    @objc private func handleLanguageDidChange() {
+        setupMenu()
+    }
+
     private func setupMenu() {
         let mainMenu = NSMenu()
 
@@ -87,7 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let appName = "GocryptKit"
 
         let aboutItem = NSMenuItem(
-            title: String(localized: "About GocryptKit"),
+            title: loc("About GocryptKit"),
             action: #selector(openAboutPanel(_:)),
             keyEquivalent: ""
         )
@@ -95,7 +106,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appMenu.addItem(aboutItem)
 
         let settingsItem = NSMenuItem(
-            title: String(localized: "Settings…"),
+            title: loc("Settings…"),
             action: #selector(openSettings(_:)),
             keyEquivalent: ","
         )
@@ -139,7 +150,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let fileMenuItem = NSMenuItem()
         let fileMenu = NSMenu(title: "File")
         let newItem = NSMenuItem(
-            title: String(localized: "Create New Vault…"),
+            title: loc("Create New Vault…"),
             action: #selector(showMainWindow(_:)),
             keyEquivalent: "n"
         )
@@ -147,7 +158,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fileMenu.addItem(newItem)
 
         let openItem = NSMenuItem(
-            title: String(localized: "Add Existing Vault…"),
+            title: loc("Add Existing Vault…"),
             action: #selector(showMainWindow(_:)),
             keyEquivalent: "o"
         )
@@ -156,7 +167,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         fileMenu.addItem(NSMenuItem.separator())
         let closeItem = NSMenuItem(
-            title: String(localized: "Close Window"),
+            title: loc("Close Window"),
             action: #selector(NSWindow.performClose(_:)),
             keyEquivalent: "w"
         )
@@ -210,15 +221,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = String(localized: "Unmount before quitting?")
+        alert.messageText = loc("Unmount before quitting?")
         let count = mounts.count
         if count == 1 {
-            alert.informativeText = String(localized: "There is 1 mounted vault. Quitting GocryptKit will unmount it. Do you want to continue?")
+            alert.informativeText = loc("There is 1 mounted vault. Quitting GocryptKit will unmount it. Do you want to continue?")
         } else {
-            alert.informativeText = String(localized: "There are \(count) mounted vaults. Quitting GocryptKit will unmount all of them. Do you want to continue?")
+            alert.informativeText = loc("There are \(count) mounted vaults. Quitting GocryptKit will unmount all of them. Do you want to continue?")
         }
-        alert.addButton(withTitle: String(localized: "Unmount and Quit"))
-        alert.addButton(withTitle: String(localized: "Cancel"))
+        alert.addButton(withTitle: loc("Unmount and Quit"))
+        alert.addButton(withTitle: loc("Cancel"))
 
         NSApp.activate(ignoringOtherApps: true)
         let response = alert.runModal()

@@ -1,5 +1,5 @@
 #!/bin/bash
-# GocryptKit DMG 构建脚本：一键完成 xcframework 生成、Release 编译、App 打包与 DMG 制作
+# GocryptKit DMG build script: one-stop xcframework build, Release compilation, App staging, and DMG packaging
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,40 +14,40 @@ DMG="$DIST/GocryptKit-$VERSION.dmg"
 
 say() { printf '\n\033[1m── %s\033[0m\n' "$1"; }
 
-say "1/5  检查/编译 Go 引擎 xcframework"
+say "1/5  Check/build Go engine xcframework"
 if [ ! -d "Engine/build/libgocryptfs.xcframework" ]; then
   Engine/build-darwin.sh >/dev/null
   Engine/make-xcframework.sh >/dev/null
 fi
-echo "     libgocryptfs.xcframework 就绪"
+echo "     libgocryptfs.xcframework ready"
 
-say "2/5  生成 Xcode 工程并执行 Release 编译"
+say "2/5  Generate Xcode project and build Release"
 xcodegen generate >/dev/null
 xcodebuild -project GocryptKit.xcodeproj -scheme GocryptKit \
   -configuration Release build >/dev/null
 
 BUILT_APP="$(find ~/Library/Developer/Xcode/DerivedData/GocryptKit-*/Build/Products/Release/GocryptKit.app -maxdepth 0 2>/dev/null | head -n 1)"
 if [ -z "$BUILT_APP" ] || [ ! -d "$BUILT_APP" ]; then
-  # 兜底查找本地 build 产物
+  # Fallback to local build products
   BUILT_APP="$(find build -name "GocryptKit.app" -type d 2>/dev/null | head -n 1)"
 fi
 
 if [ -z "$BUILT_APP" ] || [ ! -d "$BUILT_APP" ]; then
-  echo "错误：未找到编译出的 GocryptKit.app"
+  echo "Error: Could not find built GocryptKit.app"
   exit 1
 fi
-echo "     已找到构建产物: $BUILT_APP"
+echo "     Found build product: $BUILT_APP"
 
-say "3/5  暂存 App 并校验版本"
+say "3/5  Stage App and verify version"
 rm -rf "$STAGE"; mkdir -p "$STAGE"
 cp -R "$BUILT_APP" "$APP"
 "$APP/Contents/MacOS/GocryptKit" version
 
-say "4/5  制作 DMG"
+say "4/5  Build DMG"
 mkdir -p "$DIST"
 rm -f "$DMG"
 
-# 在非交互终端或自动化环境中直接使用 --skip-jenkins，避免 Finder AppleScript 挂起
+# Use --skip-jenkins in non-interactive or automated environments to prevent Finder AppleScript hang
 if [ -n "${CI:-}" ] || [ -z "${TERM:-}" ] || ! tty -s 2>/dev/null; then
   create-dmg --volname "GocryptKit" --app-drop-link 450 190 --no-internet-enable \
     --skip-jenkins "$DMG" "$STAGE" >/dev/null
@@ -55,24 +55,24 @@ else
   if ! create-dmg --volname "GocryptKit" --window-pos 200 120 --window-size 600 400 \
     --icon-size 100 --icon "GocryptKit.app" 150 190 --hide-extension "GocryptKit.app" \
     --app-drop-link 450 190 --no-internet-enable "$DMG" "$STAGE" >/dev/null 2>&1; then
-    echo "     Finder AppleScript 响应超时，降级至 --skip-jenkins 模式制作 DMG..."
+    echo "     Finder AppleScript timed out, falling back to --skip-jenkins mode..."
     rm -f "$DMG"
     create-dmg --volname "GocryptKit" --app-drop-link 450 190 --no-internet-enable \
       --skip-jenkins "$DMG" "$STAGE" >/dev/null
   fi
 fi
 
-say "5/5  签名 DMG"
+say "5/5  Sign DMG"
 if security find-identity -v -p codesigning | grep -q "$IDENTITY"; then
   codesign --force --sign "$IDENTITY" --timestamp "$DMG"
-  echo "     ✓ 已使用 Developer ID 证书签名 DMG: $IDENTITY"
+  echo "     ✓ Signed DMG with Developer ID: $IDENTITY"
 else
   codesign --force --sign - "$DMG"
-  echo "     ✓ 已使用 Ad-hoc 签名 DMG"
+  echo "     ✓ Signed DMG with Ad-hoc signature"
 fi
 
-say "完成"
+say "Done"
 rm -rf "$STAGE"
-echo "产物   : $DMG"
-echo "大小   : $(du -h "$DMG" | cut -f1)"
-echo "SHA256 : $(shasum -a 256 "$DMG" | awk '{print $1}')"
+echo "Artifact : $DMG"
+echo "Size     : $(du -h "$DMG" | cut -f1)"
+echo "SHA256   : $(shasum -a 256 "$DMG" | awk '{print $1}')"

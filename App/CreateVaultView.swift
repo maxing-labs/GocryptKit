@@ -34,18 +34,18 @@ struct CreateVaultView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Create New Vault")
+            Text(loc("Create New Vault"))
                 .font(.title3)
                 .fontWeight(.bold)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Location for new vault (must be an empty directory):")
+                Text(loc("Location for new vault (must be an empty directory):"))
                     .font(.subheadline)
                     .fontWeight(.medium)
                 HStack {
-                    TextField("Choose an empty directory", text: $cipherPath)
+                    TextField(loc("Choose an empty directory"), text: $cipherPath)
                         .textFieldStyle(.roundedBorder)
-                    Button("Choose…") { selectDirectory() }
+                    Button(loc("Choose…")) { selectDirectory() }
                 }
                 if let hint = directoryHint {
                     Text(hint.text)
@@ -55,14 +55,14 @@ struct CreateVaultView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Password:")
+                Text(loc("Password:"))
                     .font(.subheadline)
                     .fontWeight(.medium)
                 HStack(spacing: 4) {
                     if isShowingPassword {
-                        TextField("Set vault password (never stored anywhere)", text: $password)
+                        TextField(loc("Set vault password (never stored anywhere)"), text: $password)
                     } else {
-                        SecureField("Set vault password (never stored anywhere)", text: $password)
+                        SecureField(loc("Set vault password (never stored anywhere)"), text: $password)
                     }
 
                     Button {
@@ -72,26 +72,26 @@ struct CreateVaultView: View {
                             .foregroundStyle(isShowingPassword ? Color.accentColor : Color.secondary)
                     }
                     .buttonStyle(.plain)
-                    .help(isShowingPassword ? String(localized: "Hide password") : String(localized: "Show password"))
+                    .help(isShowingPassword ? loc("Hide password") : loc("Show password"))
                 }
                 .textFieldStyle(.roundedBorder)
                 strengthMeter
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Confirm password:")
+                Text(loc("Confirm password:"))
                     .font(.subheadline)
                     .fontWeight(.medium)
                 HStack(spacing: 4) {
                     if isShowingPassword {
-                        TextField("Enter the same password again", text: $confirmation)
+                        TextField(loc("Enter the same password again"), text: $confirmation)
                     } else {
-                        SecureField("Enter the same password again", text: $confirmation)
+                        SecureField(loc("Enter the same password again"), text: $confirmation)
                     }
                 }
                 .textFieldStyle(.roundedBorder)
                 if !confirmation.isEmpty && !passwordsMatch {
-                    Text("Passwords do not match")
+                    Text(loc("Passwords do not match"))
                         .font(.caption)
                         .foregroundColor(.red)
                 }
@@ -100,14 +100,14 @@ struct CreateVaultView: View {
             // This is not a legal disclaimer, but technical reality: the master key is wrapped
             // solely by the password in gocryptfs.conf, without backdoors, recovery keys, or support overrides.
             VStack(alignment: .leading, spacing: 6) {
-                Text("Lost password = permanent data loss")
+                Text(loc("Lost password = permanent data loss"))
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                Text("The vault's master key is only wrapped by this password and stored in gocryptfs.conf. There is no recovery code, no backdoor, and no one can recover it for you. Please save it in a password manager first.")
+                Text(loc("The vault's master key is only wrapped by this password and stored in gocryptfs.conf. There is no recovery code, no backdoor, and no one can recover it for you. Please save it in a password manager first."))
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Toggle("I have saved the password safely and understand it cannot be recovered if lost", isOn: $acknowledgedNoRecovery)
+                Toggle(loc("I have saved the password safely and understand it cannot be recovered if lost"), isOn: $acknowledgedNoRecovery)
                     .font(.caption)
             }
             .padding(10)
@@ -123,13 +123,13 @@ struct CreateVaultView: View {
 
             HStack {
                 Spacer()
-                Button("Cancel") { onCancel() }
+                Button(loc("Cancel")) { onCancel() }
                     .keyboardShortcut(.cancelAction)
                 Button(action: performCreate) {
                     if isBusy {
                         ProgressView().controlSize(.small)
                     } else {
-                        Text("Create")
+                        Text(loc("Create"))
                     }
                 }
                 .buttonStyle(.borderedProminent)
@@ -171,19 +171,19 @@ struct CreateVaultView: View {
 
         var isDir: ObjCBool = false
         guard fm.fileExists(atPath: path, isDirectory: &isDir) else {
-            return (String(localized: "Directory does not exist"), true)
+            return (loc("Directory does not exist"), true)
         }
         guard isDir.boolValue else {
-            return (String(localized: "This is a file, not a directory"), true)
+            return (loc("This is a file, not a directory"), true)
         }
         if fm.fileExists(atPath: (path as NSString).appendingPathComponent("gocryptfs.conf")) {
-            return (String(localized: "A vault already exists here; please mount it directly"), true)
+            return (loc("A vault already exists here; please mount it directly"), true)
         }
         let contents = (try? fm.contentsOfDirectory(atPath: path))?.filter { $0 != ".DS_Store" } ?? []
         if !contents.isEmpty {
-            return (String(localized: "Directory is not empty (\(contents.count) items). Existing files will not be encrypted; please choose an empty directory"), true)
+            return (loc("Directory is not empty (\(contents.count) items). Existing files will not be encrypted; please choose an empty directory"), true)
         }
-        return (String(localized: "Empty directory, ready to create"), false)
+        return (loc("Empty directory, ready to create"), false)
     }
 
     private func selectDirectory() {
@@ -192,8 +192,8 @@ struct CreateVaultView: View {
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = String(localized: "Choose")
-        panel.message = String(localized: "Choose an empty directory to store encrypted data")
+        panel.prompt = loc("Choose")
+        panel.message = loc("Choose an empty directory to store encrypted data")
         if panel.runModal() == .OK, let url = panel.url {
             cipherPath = url.path
         }
@@ -228,20 +228,20 @@ struct CreateVaultView: View {
 private extension PasswordStrength {
     var localizedLabel: String {
         switch self {
-        case .tooShort: return String(localized: "Too short")
-        case .weak:     return String(localized: "Weak")
-        case .fair:     return String(localized: "Fair")
-        case .strong:   return String(localized: "Strong")
+        case .tooShort: return loc("Too short")
+        case .weak:     return loc("Weak")
+        case .fair:     return loc("Fair")
+        case .strong:   return loc("Strong")
         @unknown default: return ""
         }
     }
 
     var localizedAdvice: String {
         switch self {
-        case .tooShort: return String(localized: "At least \(Self.minimumLength) characters required")
-        case .weak:     return String(localized: "Make it longer; mix uppercase, lowercase, numbers, and symbols")
-        case .fair:     return String(localized: "A bit longer would be safer")
-        case .strong:   return String(localized: "Sufficient strength")
+        case .tooShort: return loc("At least \(Self.minimumLength) characters required")
+        case .weak:     return loc("Make it longer; mix uppercase, lowercase, numbers, and symbols")
+        case .fair:     return loc("A bit longer would be safer")
+        case .strong:   return loc("Sufficient strength")
         @unknown default: return ""
         }
     }

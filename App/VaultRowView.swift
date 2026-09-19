@@ -10,8 +10,6 @@ struct VaultRowView: View {
     let store: VaultStore
     @Binding var isExpanded: Bool
 
-    @Environment(\.locale) private var locale
-
     @State private var password = ""
     @State private var isShowingPassword = false
     @State private var isMountReadOnly = false
@@ -76,23 +74,23 @@ struct VaultRowView: View {
                 isMountReadOnly = newDefault
             }
         }
-        .confirmationDialog(String(localized: "Remove \"\(vault.name)\" from list?"),
+        .confirmationDialog(loc("Remove \"\(vault.name)\" from list?"),
                             isPresented: $isConfirmingRemoval,
                             titleVisibility: .visible) {
-            Button("Remove", role: .destructive) { store.remove(vault) }
-            Button("Cancel", role: .cancel) {}
+            Button(loc("Remove"), role: .destructive) { store.remove(vault) }
+            Button(loc("Cancel"), role: .cancel) {}
         } message: {
-            Text("This only removes it from this list. Encrypted directory and data will not be modified, and can be added back later.")
+            Text(loc("This only removes it from this list. Encrypted directory and data will not be modified, and can be added back later."))
         }
-        .confirmationDialog(String(localized: "Force unmount \"\(vault.name)\"?"),
+        .confirmationDialog(loc("Force unmount \"\(vault.name)\"?"),
                             isPresented: $isConfirmingForceUnmount,
                             titleVisibility: .visible) {
-            Button("Force Unmount", role: .destructive) {
+            Button(loc("Force Unmount"), role: .destructive) {
                 viewModel.performForceUnmount(vault: vault, actualMountPoint: actualMountPoint, store: store)
             }
-            Button("Cancel", role: .cancel) {}
+            Button(loc("Cancel"), role: .cancel) {}
         } message: {
-            Text("Force unmounting immediately detaches the volume. Any unsaved changes in files currently open in other applications may be lost.")
+            Text(loc("Force unmounting immediately detaches the volume. Any unsaved changes in files currently open in other applications may be lost."))
         }
     }
 
@@ -110,7 +108,7 @@ struct VaultRowView: View {
                     .frame(width: 12)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isExpanded ? String(localized: "Collapse") : String(localized: "Expand"))
+            .accessibilityLabel(isExpanded ? loc("Collapse") : loc("Expand"))
 
             let isReadOnlyMounted = isMounted && store.isReadOnly(vault)
 
@@ -141,7 +139,7 @@ struct VaultRowView: View {
                             Circle()
                                 .fill(Color.orange)
                                 .frame(width: 6, height: 6)
-                            Text(String(localized: "Mounted (Read-Only)"))
+                            Text(loc("Mounted (Read-Only)"))
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(Color.orange)
                         }
@@ -154,23 +152,23 @@ struct VaultRowView: View {
                             Circle()
                                 .fill(Color.green)
                                 .frame(width: 6, height: 6)
-                            Text(String(localized: "Mounted"))
+                            Text(loc("Mounted"))
                                 .font(.caption)
                                 .foregroundStyle(Color.green)
                         }
                     }
                 } else {
-                    Text(String(localized: "Unmounted"))
+                    Text(loc("Unmounted"))
                         .font(.caption)
                         .foregroundStyle(Color.secondary)
                 }
             }
 
-            Button(String(localized: "Remove from List…")) { isConfirmingRemoval = true }
+            Button(loc("Remove from List…")) { isConfirmingRemoval = true }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .disabled(isMounted || viewModel.isBusy)
-                .help(isMounted ? String(localized: "Unmount before removing from the list.") : String(localized: "Only removes list entry; data on disk is untouched."))
+                .help(isMounted ? loc("Unmount before removing from the list.") : loc("Only removes list entry; data on disk is untouched."))
 
             primaryButton
         }
@@ -184,20 +182,20 @@ struct VaultRowView: View {
     @ViewBuilder
     private var primaryButton: some View {
         if isMounted {
-            Button(String(localized: "Unmount")) { performUnmount() }
+            Button(loc("Unmount")) { performUnmount() }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .disabled(viewModel.isBusy)
         } else {
             Menu {
-                Button(String(localized: "Mount (Read-Write)")) {
+                Button(loc("Mount (Read-Write)")) {
                     triggerMountAction(readOnly: false)
                 }
-                Button(String(localized: "Mount as Read-Only")) {
+                Button(loc("Mount as Read-Only")) {
                     triggerMountAction(readOnly: true)
                 }
             } label: {
-                Text(String(localized: "Mount"))
+                Text(loc("Mount"))
             } primaryAction: {
                 triggerMountAction()
             }
@@ -218,10 +216,10 @@ struct VaultRowView: View {
                         .font(.title3)
                         .foregroundStyle(isReadOnlyMounted ? Color.orange : Color.green)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(isReadOnlyMounted ? String(localized: "Currently mounted in read-only mode") : String(localized: "Currently mounted in read-write mode"))
+                        Text(isReadOnlyMounted ? loc("Currently mounted in read-only mode") : loc("Currently mounted in read-write mode"))
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(isReadOnlyMounted ? Color.orange : Color.primary)
-                        Text(isReadOnlyMounted ? String(localized: "Files are protected against modification, creation, and deletion.") : String(localized: "Full read and write permissions are enabled."))
+                        Text(isReadOnlyMounted ? loc("Files are protected against modification, creation, and deletion.") : loc("Full read and write permissions are enabled."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -238,13 +236,13 @@ struct VaultRowView: View {
                 )
             }
 
-            field(String(localized: "Name")) {
-                TextField("Vault display name", text: $editedName)
+            field(loc("Name")) {
+                TextField(loc("Vault display name"), text: $editedName)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { store.rename(vault, to: editedName) }
             }
 
-            field(String(localized: "Encrypted Directory")) {
+            field(loc("Encrypted Directory")) {
                 HStack(spacing: 6) {
                     Text(vault.cipherDirPath)
                         .font(.callout)
@@ -252,7 +250,7 @@ struct VaultRowView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer()
-                    Button("Reveal in Finder") { revealInFinder(vault.cipherDirPath) }
+                    Button(loc("Reveal in Finder")) { revealInFinder(vault.cipherDirPath) }
                         .controlSize(.small)
                 }
             }
@@ -261,7 +259,7 @@ struct VaultRowView: View {
                 ? (actualMountPoint ?? vault.mountPointPath)
                 : (isMountReadOnly ? vault.readOnlyMountPointPath : vault.mountPointPath)
 
-            field(String(localized: "Mount Point")) {
+            field(loc("Mount Point")) {
                 HStack(spacing: 6) {
                     Text(abbreviate(effectivePath))
                         .font(.callout)
@@ -269,7 +267,7 @@ struct VaultRowView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     if isMounted && store.isReadOnly(vault) {
-                        Text(String(localized: "Read-Only"))
+                        Text(loc("Read-Only"))
                             .font(.caption2.weight(.semibold))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -277,7 +275,7 @@ struct VaultRowView: View {
                             .foregroundStyle(Color.orange)
                             .clipShape(Capsule())
                     } else if !isMounted && isMountReadOnly {
-                        Text(String(localized: "Read-Only"))
+                        Text(loc("Read-Only"))
                             .font(.caption2.weight(.semibold))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -287,10 +285,10 @@ struct VaultRowView: View {
                     }
                     Spacer()
                     if isMounted {
-                        Button(String(localized: "Open")) { openMountPoint(actualMountPoint ?? vault.mountPointPath) }
+                        Button(loc("Open")) { openMountPoint(actualMountPoint ?? vault.mountPointPath) }
                             .controlSize(.small)
                     } else {
-                        Button("Change…") { chooseMountPoint() }
+                        Button(loc("Change…")) { chooseMountPoint() }
                             .controlSize(.small)
                     }
                 }
@@ -300,11 +298,11 @@ struct VaultRowView: View {
                 get: { vault.isReadOnlyDefault },
                 set: { store.setDefaultReadOnly(vault, isReadOnly: $0) }
             )) {
-                Text(String(localized: "Default to read-only"))
+                Text(loc("Default to read-only"))
                     .font(.callout)
             }
             .toggleStyle(.checkbox)
-            .help(String(localized: "Automatically select read-only mode when mounting this vault."))
+            .help(loc("Automatically select read-only mode when mounting this vault."))
 
             if isMounted {
                 // Mount point differs from registered path, most likely mounted elsewhere via CLI.
@@ -314,21 +312,21 @@ struct VaultRowView: View {
                 if let actual = actualMountPoint,
                    Vault.canonicalKey(path: actual) != Vault.canonicalKey(path: vault.mountPointPath),
                    Vault.canonicalKey(path: actual) != Vault.canonicalKey(path: vault.readOnlyMountPointPath) {
-                    Label("This volume is currently mounted elsewhere, not at the registered location.",
+                    Label(loc("This volume is currently mounted elsewhere, not at the registered location."),
                           systemImage: "info.circle")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             } else {
-                field(String(localized: "Password")) {
+                field(loc("Password")) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 6) {
                             HStack(spacing: 4) {
                                 if isShowingPassword {
-                                    TextField("Enter password (never stored anywhere)", text: $password)
+                                    TextField(loc("Enter password (never stored anywhere)"), text: $password)
                                         .focused($passwordFocused)
                                 } else {
-                                    SecureField("Enter password (never stored anywhere)", text: $password)
+                                    SecureField(loc("Enter password (never stored anywhere)"), text: $password)
                                         .focused($passwordFocused)
                                 }
 
@@ -340,12 +338,12 @@ struct VaultRowView: View {
                                         .foregroundStyle(isShowingPassword ? Color.accentColor : Color.secondary)
                                 }
                                 .buttonStyle(.plain)
-                                .help(isShowingPassword ? String(localized: "Hide password", locale: locale) : String(localized: "Show password", locale: locale))
+                                .help(isShowingPassword ? loc("Hide password") : loc("Show password"))
                             }
                             .textFieldStyle(.roundedBorder)
                             .onSubmit { if !password.isEmpty { performMount() } }
 
-                            Button(isMountReadOnly ? String(localized: "Mount Read-Only") : String(localized: "Mount")) {
+                            Button(isMountReadOnly ? loc("Mount Read-Only") : loc("Mount")) {
                                 performMount()
                             }
                             .buttonStyle(.borderedProminent)
@@ -353,7 +351,7 @@ struct VaultRowView: View {
                         }
 
                         Toggle(isOn: $isMountReadOnly) {
-                            Text(String(localized: "Mount as read-only"))
+                            Text(loc("Mount as read-only"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -371,7 +369,7 @@ struct VaultRowView: View {
 
                     if viewModel.canForceUnmount {
                         HStack {
-                            Button(String(localized: "Force Unmount…")) {
+                            Button(loc("Force Unmount…")) {
                                 isConfirmingForceUnmount = true
                             }
                             .buttonStyle(.bordered)
@@ -379,7 +377,7 @@ struct VaultRowView: View {
                             .tint(.red)
                             .disabled(viewModel.isBusy)
 
-                            Text(String(localized: "Closes active sessions immediately"))
+                            Text(loc("Closes active sessions immediately"))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -445,7 +443,7 @@ struct VaultRowView: View {
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = String(localized: "Choose mount point for \"\(vault.name)\"")
+        panel.message = loc("Choose mount point for \"\(vault.name)\"")
         panel.directoryURL = vault.mountPointURL.deletingLastPathComponent()
         if panel.runModal() == .OK, let url = panel.url {
             store.setMountPoint(vault, to: url.path)

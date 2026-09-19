@@ -9,9 +9,11 @@ struct GocryptKitApp {
 
     static func main() {
         let args = ProcessInfo.processInfo.arguments
-        if args.count > 1 && !args[1].hasPrefix("-NS") {
+        let cliCommands: Set<String> = ["init", "mount", "umount", "status", "version"]
+        if args.count > 1 && cliCommands.contains(args[1]) {
             CLIRouter.runCLI(arguments: Array(args.dropFirst()))
         } else {
+            LanguageManager.shared.syncStartupLanguage()
             let delegate = AppDelegate()
             appDelegate = delegate
             let app = NSApplication.shared

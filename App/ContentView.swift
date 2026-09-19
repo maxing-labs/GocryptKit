@@ -17,15 +17,7 @@ struct ContentView: View {
     /// `getfsstat` is inexpensive; polling periodically is more reliable than guessing which events to observe.
     private let mountPoll = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
-    @AppStorage("appLanguage") private var appLanguage: String = "system"
-
-    private var currentLocale: Locale {
-        switch appLanguage {
-        case "zh-Hans": return Locale(identifier: "zh-Hans")
-        case "en": return Locale(identifier: "en")
-        default: return Locale.autoupdatingCurrent
-        }
-    }
+    @ObservedObject private var langManager = LanguageManager.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -36,7 +28,8 @@ struct ContentView: View {
         }
         .padding(16)
         .frame(minWidth: 560, minHeight: 420)
-        .environment(\.locale, currentLocale)
+        .environment(\.locale, langManager.currentLocale)
+        .id(langManager.currentLanguage)
         .onReceive(mountPoll) { _ in store.refreshMountState() }
         .onAppear {
             store.refreshMountState()
@@ -61,7 +54,7 @@ struct ContentView: View {
                 },
                 onCancel: { isCreatingVault = false }
             )
-            .environment(\.locale, currentLocale)
+            .environment(\.locale, langManager.currentLocale)
         }
     }
 
@@ -92,7 +85,7 @@ struct ContentView: View {
                         .cornerRadius(4)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "View About GocryptKit", locale: currentLocale))
+                .help(loc("View About GocryptKit"))
             }
             Spacer()
             HStack(spacing: 6) {
@@ -119,12 +112,12 @@ struct ContentView: View {
     }
 
     private var statusLabel: String {
-        if isCheckingExtension { return String(localized: "Checking extension…", locale: currentLocale) }
+        if isCheckingExtension { return loc("Checking extension…") }
         switch mountManager.extensionStatus {
-        case .enabled: return String(localized: "FSKit extension is enabled", locale: currentLocale)
-        case .disabled: return String(localized: "Extension is disabled", locale: currentLocale)
-        case .notRegistered: return String(localized: "Extension not registered", locale: currentLocale)
-        case .unknown: return String(localized: "Extension status unknown", locale: currentLocale)
+        case .enabled: return loc("FSKit extension is enabled")
+        case .disabled: return loc("Extension is disabled")
+        case .notRegistered: return loc("Extension not registered")
+        case .unknown: return loc("Extension status unknown")
         }
     }
 
@@ -137,20 +130,20 @@ struct ContentView: View {
             EmptyView().hidden().frame(height: 0)
         case .disabled:
             warningBox(
-                title: String(localized: "FSKit extension is disabled by system; cannot mount volumes", locale: currentLocale),
-                detail: String(localized: "System Settings → General → Login Items & Extensions → scroll to bottom and click 'File System Extensions' → enable GocryptKit.\nThis is a macOS security confirmation for third-party file systems; the app cannot enable it automatically.", locale: currentLocale),
+                title: loc("FSKit extension is disabled by system; cannot mount volumes"),
+                detail: loc("System Settings → General → Login Items & Extensions → scroll to bottom and click 'File System Extensions' → enable GocryptKit.\nThis is a macOS security confirmation for third-party file systems; the app cannot enable it automatically."),
                 showsSettingsButton: true
             )
         case .notRegistered:
             warningBox(
-                title: String(localized: "System has not registered this extension yet", locale: currentLocale),
-                detail: String(localized: "If the app was just installed or updated, quit and reopen it to register the extension. Then go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit.", locale: currentLocale),
+                title: loc("System has not registered this extension yet"),
+                detail: loc("If the app was just installed or updated, quit and reopen it to register the extension. Then go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit."),
                 showsSettingsButton: true
             )
         case .unknown:
             warningBox(
-                title: String(localized: "Unable to confirm extension status", locale: currentLocale),
-                detail: String(localized: "Probe could not be completed. You can click 'Recheck' to try again; if mounting works normally, you can safely ignore this.", locale: currentLocale),
+                title: loc("Unable to confirm extension status"),
+                detail: loc("Probe could not be completed. You can click 'Recheck' to try again; if mounting works normally, you can safely ignore this."),
                 showsSettingsButton: false
             )
         }
@@ -167,11 +160,11 @@ struct ContentView: View {
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
                 if showsSettingsButton {
-                    Button("Open System Settings") { openExtensionSettings() }
+                    Button(loc("Open System Settings")) { openExtensionSettings() }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
                 }
-                Button("Recheck") { refreshExtensionStatus() }
+                Button(loc("Recheck")) { refreshExtensionStatus() }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(isCheckingExtension)
@@ -248,16 +241,16 @@ struct ContentView: View {
             Image(systemName: "folder.badge.questionmark")
                 .font(.system(size: 34))
                 .foregroundStyle(.tertiary)
-            Text(String(localized: "No Vaults Added Yet"))
+            Text(loc("No Vaults Added Yet"))
                 .font(.headline)
-            Text(String(localized: "Add an existing gocryptfs directory, or create a new one."))
+            Text(loc("Add an existing gocryptfs directory, or create a new one."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
-                Button(String(localized: "Add Existing Vault…")) { addExistingVault() }
+                Button(loc("Add Existing Vault…")) { addExistingVault() }
                     .buttonStyle(.borderedProminent)
-                Button(String(localized: "Create New Vault…")) { isCreatingVault = true }
+                Button(loc("Create New Vault…")) { isCreatingVault = true }
                     .buttonStyle(.bordered)
             }
             .padding(.top, 4)
@@ -277,15 +270,15 @@ struct ContentView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 8) {
-                Button(String(localized: "Add Existing Vault…")) { addExistingVault() }
+                Button(loc("Add Existing Vault…")) { addExistingVault() }
                     .buttonStyle(.bordered)
                     .keyboardShortcut("o", modifiers: .command)
-                Button(String(localized: "Create New Vault…")) { isCreatingVault = true }
+                Button(loc("Create New Vault…")) { isCreatingVault = true }
                     .buttonStyle(.bordered)
                     .keyboardShortcut("n", modifiers: .command)
                 Spacer()
                 if !store.vaults.isEmpty {
-                    Text("\(store.vaults.count) vaults, \(store.mountedCount) mounted")
+                    Text(loc("\(store.vaults.count) vaults, \(store.mountedCount) mounted"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -299,13 +292,13 @@ struct ContentView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = String(localized: "Choose an existing gocryptfs encrypted directory", locale: currentLocale)
+        panel.message = loc("Choose an existing gocryptfs encrypted directory")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let vault = try store.addExisting(cipherDir: url)
             expandedVaultIDs = [vault.id]
         } catch let err as VaultRegistryError {
-            addError = err.userFacingMessage(locale: currentLocale)
+            addError = err.userFacingMessage()
         } catch {
             addError = error.localizedDescription
         }
@@ -313,12 +306,12 @@ struct ContentView: View {
 }
 
 extension VaultRegistryError {
-    func userFacingMessage(locale: Locale) -> String {
+    func userFacingMessage() -> String {
         switch self {
         case .notAVault(let path):
-            return String(localized: "No gocryptfs.conf found in \(path); not a valid gocryptfs vault.", locale: locale)
+            return loc("No gocryptfs.conf found in \(path); not a valid gocryptfs vault.")
         case .duplicate(let name):
-            return String(localized: "This directory is already in the list (\(name)).", locale: locale)
+            return loc("This directory is already in the list (\(name)).")
         }
     }
 }

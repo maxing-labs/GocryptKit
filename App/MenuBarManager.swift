@@ -16,14 +16,6 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
     /// Flag indicating whether "Unmount All" is currently running
     private var isUnmountingAll: Bool = false
 
-    private var currentLocale: Locale {
-        let lang = UserDefaults.standard.string(forKey: "appLanguage") ?? "system"
-        switch lang {
-        case "zh-Hans": return Locale(identifier: "zh-Hans")
-        case "en": return Locale(identifier: "en")
-        default: return Locale.autoupdatingCurrent
-        }
-    }
 
     init(appDelegate: AppDelegate, store: VaultStore) {
         self.appDelegate = appDelegate
@@ -59,8 +51,8 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
         let count = store.mountedCount
         if count > 0 {
             button.toolTip = count == 1
-                ? String(localized: "GocryptKit (1 vault mounted)", locale: currentLocale)
-                : String(localized: "GocryptKit (\(count) vaults mounted)", locale: currentLocale)
+                ? loc("GocryptKit (1 vault mounted)")
+                : loc("GocryptKit (\(count) vaults mounted)")
         } else {
             button.toolTip = "GocryptKit"
         }
@@ -79,7 +71,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
         updateStatusIcon()
 
         let openItem = NSMenuItem(
-            title: String(localized: "Open GocryptKit", locale: currentLocale),
+            title: loc("Open GocryptKit"),
             action: #selector(showMainWindow(_:)),
             keyEquivalent: ""
         )
@@ -91,7 +83,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
         // MARK: - Dynamic Vault List
         if store.vaults.isEmpty {
             let emptyItem = NSMenuItem(
-                title: String(localized: "No Vaults Added", locale: currentLocale),
+                title: loc("No Vaults Added"),
                 action: nil,
                 keyEquivalent: ""
             )
@@ -106,7 +98,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
                 let isMounted = store.isMounted(vault)
                 let isRO = isMounted && store.isReadOnly(vault)
                 let item = NSMenuItem()
-                item.title = isRO ? "\(vault.name) (\(String(localized: "Read-Only", locale: currentLocale)))" : vault.name
+                item.title = isRO ? "\(vault.name) (\(loc("Read-Only")))" : vault.name
 
                 if isMounted {
                     item.image = NSImage(systemSymbolName: "lock.open.fill", accessibilityDescription: isRO ? "Mounted (Read-Only)" : "Mounted")?
@@ -116,8 +108,8 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
 
                     let statusHeader = NSMenuItem(
                         title: isRO
-                            ? "● \(String(localized: "Mounted (Read-Only)", locale: currentLocale))"
-                            : "● \(String(localized: "Mounted (Read-Write)", locale: currentLocale))",
+                            ? "● \(loc("Mounted (Read-Only)"))"
+                            : "● \(loc("Mounted (Read-Write)"))",
                         action: nil,
                         keyEquivalent: ""
                     )
@@ -127,7 +119,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
 
                     let actualPath = store.actualMountPoint(vault) ?? vault.mountPointPath
                     let revealItem = NSMenuItem(
-                        title: String(localized: "Reveal in Finder", locale: currentLocale),
+                        title: loc("Reveal in Finder"),
                         action: #selector(revealVaultInFinder(_:)),
                         keyEquivalent: ""
                     )
@@ -138,8 +130,8 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
 
                     let isThisUnmounting = unmountingVaultIDs.contains(vault.id) || isUnmountingAll
                     let unmountTitle = isThisUnmounting
-                        ? String(localized: "Unmounting…", locale: currentLocale)
-                        : String(localized: "Unmount", locale: currentLocale)
+                        ? loc("Unmounting…")
+                        : loc("Unmount")
 
                     let unmountItem = NSMenuItem(
                         title: unmountTitle,
@@ -168,8 +160,8 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
                 menu.addItem(NSMenuItem.separator())
                 let isAnyUnmounting = isUnmountingAll || !unmountingVaultIDs.isEmpty
                 let unmountAllTitle = isAnyUnmounting
-                    ? String(localized: "Unmounting…", locale: currentLocale)
-                    : String(localized: "Unmount All", locale: currentLocale)
+                    ? loc("Unmounting…")
+                    : loc("Unmount All")
 
                 let unmountAllItem = NSMenuItem(
                     title: unmountAllTitle,
@@ -186,11 +178,11 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
         menu.addItem(NSMenuItem.separator())
 
         // Language submenu
-        let langSubmenu = NSMenu(title: String(localized: "Language", locale: currentLocale))
-        let currentLang = UserDefaults.standard.string(forKey: "appLanguage") ?? "system"
+        let langSubmenu = NSMenu(title: loc("Language"))
+        let currentLang = LanguageManager.shared.currentLanguage
 
         let sysItem = NSMenuItem(
-            title: String(localized: "System Language", locale: currentLocale),
+            title: loc("System Language"),
             action: #selector(setLanguageSystem(_:)),
             keyEquivalent: ""
         )
@@ -217,7 +209,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
         langSubmenu.addItem(enItem)
 
         let langMenuItem = NSMenuItem(
-            title: String(localized: "Language", locale: currentLocale),
+            title: loc("Language"),
             action: nil,
             keyEquivalent: ""
         )
@@ -225,7 +217,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
         menu.addItem(langMenuItem)
 
         let aboutItem = NSMenuItem(
-            title: String(localized: "About GocryptKit", locale: currentLocale),
+            title: loc("About GocryptKit"),
             action: #selector(openAboutPanel(_:)),
             keyEquivalent: ""
         )
@@ -235,7 +227,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
         menu.addItem(NSMenuItem.separator())
 
         let quitItem = NSMenuItem(
-            title: String(localized: "Quit GocryptKit", locale: currentLocale),
+            title: loc("Quit GocryptKit"),
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: ""
         )
@@ -341,7 +333,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
                 } else if let firstFail = failedVaults.first {
                     let alert = NSAlert()
                     alert.alertStyle = .warning
-                    alert.messageText = String(localized: "Unmount Failed", locale: self.currentLocale)
+                    alert.messageText = loc("Unmount Failed")
                     alert.informativeText = firstFail.error.localizedDescription
                     NSApp.activate(ignoringOtherApps: true)
                     alert.runModal()
@@ -361,14 +353,11 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
 
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = String(localized: "Volumes In Use", locale: currentLocale)
+        alert.messageText = loc("Volumes In Use")
         let names = busyList.map { "「\($0.vault.name)」" }.joined(separator: "、")
-        alert.informativeText = String(
-            localized: "The following vaults are currently in use by other applications: \(names)\nPlease close related files or Finder windows and try again.",
-            locale: currentLocale
-        )
-        alert.addButton(withTitle: String(localized: "Cancel", locale: currentLocale))
-        alert.addButton(withTitle: String(localized: "Force Unmount All", locale: currentLocale))
+        alert.informativeText = loc("The following vaults are currently in use by other applications: \(names)\nPlease close related files or Finder windows and try again.")
+        alert.addButton(withTitle: loc("Cancel"))
+        alert.addButton(withTitle: loc("Force Unmount All"))
 
         NSApp.activate(ignoringOtherApps: true)
         let response = alert.runModal()
@@ -389,12 +378,9 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
                     if !failedNames.isEmpty {
                         let failAlert = NSAlert()
                         failAlert.alertStyle = .critical
-                        failAlert.messageText = String(localized: "Force Unmount Failed", locale: self.currentLocale)
+                        failAlert.messageText = loc("Force Unmount Failed")
                         let joined = failedNames.joined(separator: ", ")
-                        failAlert.informativeText = String(
-                            localized: "Failed to force unmount: \(joined)",
-                            locale: self.currentLocale
-                        )
+                        failAlert.informativeText = loc("Failed to force unmount: \(joined)")
                         NSApp.activate(ignoringOtherApps: true)
                         failAlert.runModal()
                     }
@@ -412,13 +398,10 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
         if errorDesc.contains("Resource busy") || errorDesc.contains("EBUSY") {
             let alert = NSAlert()
             alert.alertStyle = .warning
-            alert.messageText = String(localized: "Volume In Use", locale: currentLocale)
-            alert.informativeText = String(
-                localized: "Vault \"\(vault.name)\" is currently in use by another application. Please close related files or Finder windows and try again.",
-                locale: currentLocale
-            )
-            alert.addButton(withTitle: String(localized: "Cancel", locale: currentLocale))
-            alert.addButton(withTitle: String(localized: "Force Unmount", locale: currentLocale))
+            alert.messageText = loc("Volume In Use")
+            alert.informativeText = loc("Vault \"\(vault.name)\" is currently in use by another application. Please close related files or Finder windows and try again.")
+            alert.addButton(withTitle: loc("Cancel"))
+            alert.addButton(withTitle: loc("Force Unmount"))
 
             NSApp.activate(ignoringOtherApps: true)
             let response = alert.runModal()
@@ -435,7 +418,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
                         await MainActor.run {
                             let failAlert = NSAlert()
                             failAlert.alertStyle = .critical
-                            failAlert.messageText = String(localized: "Force Unmount Failed", locale: self.currentLocale)
+                            failAlert.messageText = loc("Force Unmount Failed")
                             failAlert.informativeText = error.localizedDescription
                             NSApp.activate(ignoringOtherApps: true)
                             failAlert.runModal()
@@ -448,7 +431,7 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
         } else {
             let alert = NSAlert()
             alert.alertStyle = .warning
-            alert.messageText = String(localized: "Unmount Failed", locale: currentLocale)
+            alert.messageText = loc("Unmount Failed")
             alert.informativeText = errorDesc
             NSApp.activate(ignoringOtherApps: true)
             alert.runModal()
@@ -456,14 +439,14 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
     }
 
     @objc func setLanguageSystem(_ sender: Any?) {
-        UserDefaults.standard.set("system", forKey: "appLanguage")
+        LanguageManager.shared.setLanguage("system")
     }
 
     @objc func setLanguageZhHans(_ sender: Any?) {
-        UserDefaults.standard.set("zh-Hans", forKey: "appLanguage")
+        LanguageManager.shared.setLanguage("zh-Hans")
     }
 
     @objc func setLanguageEn(_ sender: Any?) {
-        UserDefaults.standard.set("en", forKey: "appLanguage")
+        LanguageManager.shared.setLanguage("en")
     }
 }

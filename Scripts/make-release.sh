@@ -1,6 +1,6 @@
 #!/bin/bash
-# GocryptKit 发布流水线：Release 归档 → 嵌入 Developer ID(Direct) profile →
-# 由内向外签名 → 可选公证 App → 打 DMG → 可选公证 DMG → 装订。
+# GocryptKit release pipeline: Release archive → embed Developer ID (Direct) profile →
+# inside-out codesigning → optional App notarization → build DMG → optional DMG notarization → stapling.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,12 +23,12 @@ DMG="$DIST/GocryptKit-$VERSION.dmg"
 
 say() { printf '\n\033[1m── %s\033[0m\n' "$1"; }
 
-say "1/8  重建 Go 引擎与 xcframework"
+say "1/8  Rebuild Go engine and xcframework"
 Engine/build-darwin.sh >/dev/null
 Engine/make-xcframework.sh >/dev/null
-echo "     libgocryptfs.xcframework 就绪"
+echo "     libgocryptfs.xcframework ready"
 
-say "2/8  Release 归档"
+say "2/8  Release archive"
 xcodegen generate >/dev/null
 rm -rf "$ARCHIVE"
 xcodebuild -project GocryptKit.xcodeproj -scheme GocryptKit \
@@ -36,7 +36,7 @@ xcodebuild -project GocryptKit.xcodeproj -scheme GocryptKit \
   -archivePath "$ARCHIVE" archive -allowProvisioningUpdates >/dev/null
 echo "     $ARCHIVE"
 
-say "3/8  暂存并嵌入 Developer ID (Direct) profile"
+say "3/8  Stage and embed Developer ID (Direct) profile"
 if [ -f "$PROFILE_EXT" ] && [ -f "$PROFILE_APP" ]; then
   rm -rf "$STAGE"; mkdir -p "$STAGE"
   cp -R "$ARCHIVE/Products/Applications/GocryptKit.app" "$APP"
@@ -45,50 +45,50 @@ if [ -f "$PROFILE_EXT" ] && [ -f "$PROFILE_APP" ]; then
   echo "     ext : $(security cms -D -i "$PROFILE_EXT" | plutil -extract Name raw -)"
   echo "     host: $(security cms -D -i "$PROFILE_APP" | plutil -extract Name raw -)"
 else
-  echo "     未找到 DirectDistribution profile，以当前归档签名继续暂存..."
+  echo "     DirectDistribution profiles not found, continuing with archive signature..."
   rm -rf "$STAGE"; mkdir -p "$STAGE"
   cp -R "$ARCHIVE/Products/Applications/GocryptKit.app" "$APP"
 fi
 
-say "4/8  由内向外签名（严禁 --deep）"
+say "4/8  Inside-out signing (strictly no --deep)"
 if security find-identity -v -p codesigning | grep -q "$IDENTITY"; then
   codesign --force --options runtime --timestamp \
     --sign "$IDENTITY" --entitlements "$ENTS_EXT" "$EXT"
   codesign --force --options runtime --timestamp \
     --sign "$IDENTITY" --entitlements "$ENTS_APP" "$APP"
-  echo "     ✓ 已使用 Developer ID 证书重新签名"
+  echo "     ✓ Resigned with Developer ID certificate"
 fi
 
 if ! "$APP/Contents/MacOS/GocryptKit" version >/dev/null 2>&1; then
-  echo "致命：签名后的宿主无法运行（AMFI 拦截）。"
+  echo "Fatal: Signed host failed to launch (blocked by AMFI)."
   exit 1
 fi
-echo "     ✓ 签名后宿主可正常启动"
+echo "     ✓ Signed host launches successfully"
 codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | tail -2
 
-say "5/8  校验 profile 类型"
+say "5/8  Validate profile type"
 if [ -f "$APP/Contents/embedded.provisionprofile" ]; then
   for pp in "$APP/Contents/embedded.provisionprofile" "$EXT/Contents/embedded.provisionprofile"; do
     security cms -D -i "$pp" > /tmp/_pp0.plist
     /usr/libexec/PlistBuddy -c 'Print :ProvisionsAllDevices' /tmp/_pp0.plist >/dev/null 2>&1 \
-      || echo "提示：$pp 缺少 ProvisionsAllDevices（开发环境正常）"
+      || echo "Notice: $pp lacks ProvisionsAllDevices (normal in dev environment)"
   done
   rm -f /tmp/_pp0.plist
 fi
 
-say "6/8  公证 App 并装订（可选）"
+say "6/8  Notarize App and staple (optional)"
 submit_and_wait() {
   local target="$1"
   local attempts=3
   for i in $(seq 1 $attempts); do
-    echo "     提交公证 (尝试 $i/$attempts): $target"
+    echo "     Submitting for notarization (attempt $i/$attempts): $target"
     if xcrun notarytool submit "$target" --keychain-profile "$NOTARY_PROFILE" --wait --timeout 20m; then
       return 0
     fi
-    echo "     ⚠️  公证提交中断或连接超时，5 秒后重试..."
+    echo "     ⚠️  Notarization submission failed or timed out, retrying in 5s..."
     sleep 5
   done
-  echo "     ❌ 公证在 $attempts 次尝试后均失败"
+  echo "     ❌ Notarization failed after $attempts attempts"
   return 1
 }
 
@@ -103,36 +103,41 @@ if [ "$CAN_NOTARIZE" = "1" ]; then
   submit_and_wait build/GocryptKit-notarize.zip
   xcrun stapler staple "$APP"
 else
-  echo "     跳过 App 公证（未配置 notary profile 或 SKIP_NOTARIZATION=1）"
+  echo "     Skipping App notarization (notary profile not configured or SKIP_NOTARIZATION=1)"
 fi
 
-say "7/8  制作并签名 DMG"
+say "7/8  Build and sign DMG"
 mkdir -p "$DIST"
-rm -f "$DMG"
-if ! create-dmg --volname "GocryptKit" --window-pos 200 120 --window-size 600 400 \
-  --icon-size 100 --icon "GocryptKit.app" 150 190 --hide-extension "GocryptKit.app" \
-  --app-drop-link 450 190 --no-internet-enable "$DMG" "$STAGE" >/dev/null 2>&1; then
-  echo "     Finder AppleScript 响应超时，降级至 --skip-jenkins 模式制作 DMG..."
-  rm -f "$DMG"
+# Use --skip-jenkins in non-interactive or automated environments to prevent Finder AppleScript hang
+if [ -n "${CI:-}" ] || [ -z "${TERM:-}" ] || ! tty -s 2>/dev/null; then
   create-dmg --volname "GocryptKit" --app-drop-link 450 190 --no-internet-enable \
     --skip-jenkins "$DMG" "$STAGE" >/dev/null
+else
+  if ! create-dmg --volname "GocryptKit" --window-pos 200 120 --window-size 600 400 \
+    --icon-size 100 --icon "GocryptKit.app" 150 190 --hide-extension "GocryptKit.app" \
+    --app-drop-link 450 190 --no-internet-enable "$DMG" "$STAGE" >/dev/null 2>&1; then
+    echo "     Finder AppleScript timed out, falling back to --skip-jenkins mode..."
+    rm -f "$DMG"
+    create-dmg --volname "GocryptKit" --app-drop-link 450 190 --no-internet-enable \
+      --skip-jenkins "$DMG" "$STAGE" >/dev/null
+  fi
 fi
 
 if security find-identity -v -p codesigning | grep -q "$IDENTITY"; then
   codesign --force --sign "$IDENTITY" --timestamp "$DMG"
 fi
 
-say "8/8  公证 DMG 并装订（可选）"
+say "8/8  Notarize DMG and staple (optional)"
 if [ "$CAN_NOTARIZE" = "1" ]; then
   submit_and_wait "$DMG"
   xcrun stapler staple "$DMG"
   xcrun stapler validate "$DMG"
   spctl -a -t open --context context:primary-signature -vv "$DMG"
 else
-  echo "     跳过 DMG 公证与装订"
+  echo "     Skipping DMG notarization and stapling"
 fi
 
-say "完成"
-echo "产物   : $DMG"
-echo "大小   : $(du -h "$DMG" | cut -f1)"
-echo "SHA256 : $(shasum -a 256 "$DMG" | awk '{print $1}')"
+say "Done"
+echo "Artifact : $DMG"
+echo "Size     : $(du -h "$DMG" | cut -f1)"
+echo "SHA256   : $(shasum -a 256 "$DMG" | awk '{print $1}')"

@@ -95,19 +95,19 @@ final class VaultRowViewModel: @unchecked Sendable {
     static func humanize(_ error: Error) -> String {
         let raw = error.localizedDescription
         if FSModuleProbe.interpret(mountStderr: raw) == .disabled {
-            return String(localized: "FSKit extension is disabled by system; cannot mount. Go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit, then try again.")
+            return loc("FSKit extension is disabled by system; cannot mount. Go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit, then try again.")
         }
         if raw.contains("Couldn't communicate with a helper application") {
-            return String(localized: "Extension is still starting up (known cold start behavior). Please click Mount again.")
+            return loc("Extension is still starting up (known cold start behavior). Please click Mount again.")
         }
         if raw.contains("Permission denied") {
-            return String(localized: "Permission denied accessing vault or mount directory.")
+            return loc("Permission denied accessing vault or mount directory.")
         }
         if raw.contains("No such file or directory") {
-            return String(localized: "Vault directory or mountpoint does not exist.")
+            return loc("Vault directory or mountpoint does not exist.")
         }
         if raw.contains("Resource busy") || raw.contains("already mounted") {
-            return String(localized: "Mount point is already mounted or busy.")
+            return loc("Mount point is already mounted or busy.")
         }
         // Retain other errors, stripping old mount helper fallback noise
         let useful = raw
@@ -120,7 +120,7 @@ final class VaultRowViewModel: @unchecked Sendable {
     static func humanizeUnmountError(_ error: Error) -> String {
         let raw = error.localizedDescription
         if raw.contains("Resource busy") {
-            return String(localized: "Volume is in use by another application. Please close open files/Finder windows and try again.")
+            return loc("Volume is in use by another application. Please close open files/Finder windows and try again.")
         }
         return raw
     }
