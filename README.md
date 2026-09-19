@@ -57,6 +57,7 @@ See [Getting Started](#getting-started) below for setup instructions.
 
 ### v1.3.8 (2026-09-19) — Robustness & Architecture Enhancements
 - **Mount Point Pre-flight Hint**: Added real-time non-intrusive warning in the vault card when a target mount directory already exists and is not empty or is a file.
+- **Card Layout & Writable Toggle**: Added localized "Writable" label adjacent to the mount mode switch toggle, and placed "Mount Point" above "Encrypted Directory" for a more natural top-down workflow.
 - **Typed Error Architecture**: Introduced `MountError` and `UnmountError` enums in `VaultCore` for structured, type-safe error handling and localization across the app and CLI.
 - **Dual Mount State Sync**: Integrated `NSWorkspace` notifications (`didMountNotification`, `didUnmountNotification`) for instant sub-second UI updates when volumes are mounted or ejected via Finder, backed by periodic polling.
 - **CLI Forced Unmount**: Added `-f` / `--force` flags to `GocryptKit umount` CLI command.

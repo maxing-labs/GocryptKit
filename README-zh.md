@@ -56,6 +56,7 @@ spctl -a -t open --context context:primary-signature -vv GocryptKit-1.3.8.dmg
 
 ### v1.3.8 (2026-09-19) — 架构健壮性与深度测试
 - **挂载点预检预警**：在未挂载状态下，展开卡片实时探测挂载点路径，若目标目录已存在且非空，给予非侵入式浅色提醒，避免挂载失败。
+- **卡片布局优化与 Switch 增强**：挂载模式 Switch 开关左侧补充“可写”状态标签，且将高频关心的“挂载点”移至“加密目录”上方，信息层级更清晰。
 - **类型化错误模型**：在 `VaultCore` 中将挂载与卸载错误封装为强类型的 `MountError` 与 `UnmountError`，彻底告别脆弱的字符串包含判断。
 - **双模事件驱动状态同步**：接入 `NSWorkspace` 的 `didMountNotification` 和 `didUnmountNotification` 系统通知，Finder 弹出/挂载实现毫秒级即时响应，保留 2 秒轮询作为 CLI 兜底。
 - **CLI 增强**：`GocryptKit umount` 支持 `-f` / `--force` 强制卸载参数。

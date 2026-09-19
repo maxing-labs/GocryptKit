@@ -273,6 +273,13 @@ struct VaultRowView: View {
                         }
 
                         HStack(spacing: 8) {
+                            Text(loc("Writable"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .onTapGesture {
+                                    isMountReadOnly.toggle()
+                                }
+
                             Toggle(isOn: Binding(
                                 get: { !isMountReadOnly },
                                 set: { isMountReadOnly = !$0 }
@@ -302,19 +309,6 @@ struct VaultRowView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
-                }
-            }
-
-            field(loc("Encrypted Directory")) {
-                HStack(spacing: 6) {
-                    Text(vault.cipherDirPath)
-                        .font(.callout)
-                        .textSelection(.enabled)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer()
-                    Button(loc("Reveal in Finder")) { revealInFinder(vault.cipherDirPath) }
-                        .controlSize(.small)
                 }
             }
 
@@ -365,6 +359,19 @@ struct VaultRowView: View {
                         .font(.caption)
                         .foregroundStyle(.orange)
                     }
+                }
+            }
+
+            field(loc("Encrypted Directory")) {
+                HStack(spacing: 6) {
+                    Text(vault.cipherDirPath)
+                        .font(.callout)
+                        .textSelection(.enabled)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                    Button(loc("Reveal in Finder")) { revealInFinder(vault.cipherDirPath) }
+                        .controlSize(.small)
                 }
             }
 
