@@ -6,10 +6,12 @@ import VaultCore
 final class VaultRowViewModel: @unchecked Sendable {
     var isBusy: Bool = false
     var errorMessage: String?
+    var canForceUnmount: Bool = false
 
     func performMount(vault: Vault, password: String, store: VaultStore) {
         guard !password.isEmpty else { return }
         errorMessage = nil
+        canForceUnmount = false
         isBusy = true
         let cipherDir = vault.cipherDirURL
         let mountPoint = vault.mountPointURL
@@ -39,6 +41,7 @@ final class VaultRowViewModel: @unchecked Sendable {
 
     func performUnmount(vault: Vault, actualMountPoint: String?, store: VaultStore) {
         errorMessage = nil
+        canForceUnmount = false
         isBusy = true
         let target = URL(fileURLWithPath: actualMountPoint ?? vault.mountPointPath)
 
@@ -47,6 +50,34 @@ final class VaultRowViewModel: @unchecked Sendable {
                 try MountManager.shared.unmountVault(mountPoint: target)
                 await MainActor.run {
                     self.isBusy = false
+                    self.canForceUnmount = false
+                    store.refreshMountState()
+                }
+            } catch {
+                await MainActor.run {
+                    self.isBusy = false
+                    self.errorMessage = Self.humanizeUnmountError(error)
+                    let raw = error.localizedDescription.lowercased()
+                    if raw.contains("busy") || raw.contains("in use") {
+                        self.canForceUnmount = true
+                    }
+                    store.refreshMountState()
+                }
+            }
+        }
+    }
+
+    func performForceUnmount(vault: Vault, actualMountPoint: String?, store: VaultStore) {
+        errorMessage = nil
+        isBusy = true
+        let target = URL(fileURLWithPath: actualMountPoint ?? vault.mountPointPath)
+
+        Task.detached(priority: .userInitiated) {
+            do {
+                try MountManager.shared.unmountVault(mountPoint: target, force: true)
+                await MainActor.run {
+                    self.isBusy = false
+                    self.canForceUnmount = false
                     store.refreshMountState()
                 }
             } catch {

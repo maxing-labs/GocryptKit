@@ -49,22 +49,19 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
         }
     }
 
-    /// Dynamically updates the status bar icon based on current mount state (unmounted: locked; mounted: open lock)
+    /// Always displays the default branded menu bar icon ("MenuBarIcon"), updating tooltip with mount status.
     func updateStatusIcon() {
         guard let button = statusItem?.button else { return }
+        let defaultIcon = NSImage(named: "MenuBarIcon") ?? NSImage(systemSymbolName: "lock.fill", accessibilityDescription: "GocryptKit")
+        defaultIcon?.isTemplate = true
+        button.image = defaultIcon
+
         let count = store.mountedCount
         if count > 0 {
-            if let openIcon = NSImage(systemSymbolName: "lock.open.fill", accessibilityDescription: "GocryptKit") {
-                openIcon.isTemplate = true
-                button.image = openIcon
-            }
             button.toolTip = count == 1
                 ? String(localized: "GocryptKit (1 vault mounted)", locale: currentLocale)
                 : String(localized: "GocryptKit (\(count) vaults mounted)", locale: currentLocale)
         } else {
-            let defaultIcon = NSImage(named: "MenuBarIcon") ?? NSImage(systemSymbolName: "lock.fill", accessibilityDescription: "GocryptKit")
-            defaultIcon?.isTemplate = true
-            button.image = defaultIcon
             button.toolTip = "GocryptKit"
         }
     }
@@ -216,10 +213,10 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
 
         let aboutItem = NSMenuItem(
             title: String(localized: "About GocryptKit", locale: currentLocale),
-            action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
+            action: #selector(openAboutPanel(_:)),
             keyEquivalent: ""
         )
-        aboutItem.target = NSApp
+        aboutItem.target = self
         menu.addItem(aboutItem)
 
         menu.addItem(NSMenuItem.separator())
@@ -237,6 +234,15 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
 
     @objc func showMainWindow(_ sender: Any?) {
         appDelegate?.showMainWindow(sender)
+    }
+
+    @objc private func openAboutPanel(_ sender: Any?) {
+        if let appDelegate = appDelegate {
+            appDelegate.openAboutPanel(sender)
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.orderFrontStandardAboutPanel(sender)
+        }
     }
 
     @objc private func revealVaultInFinder(_ sender: NSMenuItem) {

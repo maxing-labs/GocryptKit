@@ -42,8 +42,8 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: GocryptKit
         INFOPLIST_KEY_CFBundleDevelopmentRegion: en
         INFOPLIST_KEY_NSHumanReadableCopyright: "App icon: folder-key icon by Flaticon (flaticon.com), Flaticon Free License."
-        CURRENT_PROJECT_VERSION: "8"
-        MARKETING_VERSION: "1.2.4"
+        CURRENT_PROJECT_VERSION: "9"
+        MARKETING_VERSION: "1.2.5"
 
   GocryptKitExt:
     type: extensionkit-extension
@@ -67,8 +67,8 @@ targets:
         INFOPLIST_FILE: Extension/Info.plist
         INFOPLIST_KEY_CFBundleDevelopmentRegion: en
         ENABLE_HARDENED_RUNTIME: YES
-        CURRENT_PROJECT_VERSION: "8"
-        MARKETING_VERSION: "1.2.4"
+        CURRENT_PROJECT_VERSION: "9"
+        MARKETING_VERSION: "1.2.5"
 
   GocryptKit-iOS:
     type: application
@@ -93,8 +93,8 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown"
         INFOPLIST_KEY_UISupportedInterfaceOrientations~ipad: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown"
-        CURRENT_PROJECT_VERSION: "8"
-        MARKETING_VERSION: "1.2.4"
+        CURRENT_PROJECT_VERSION: "9"
+        MARKETING_VERSION: "1.2.5"
         TARGETED_DEVICE_FAMILY: "1,2"
         SKIP_INSTALL: NO
 

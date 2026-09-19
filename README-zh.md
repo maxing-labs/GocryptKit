@@ -27,21 +27,21 @@
 
 ## 下载与体验
 
-**v1.2.4** — 首个正式开源发布版本（macOS Apple Silicon）
+**v1.2.5** — 质量加固、安全性与易用性提升版本（macOS Apple Silicon）
 
-→ [前往 GitHub Releases 页面下载](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.2.4)
+→ [前往 GitHub Releases 页面下载](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.2.5)
 
 | 项 | 值 |
 |---|---|
-| 文件 | `GocryptKit-1.2.4.dmg` |
+| 文件 | `GocryptKit-1.2.5.dmg` |
 | 架构 | Apple Silicon (`arm64-only`) |
 | 签名 | Developer ID Application（已通过苹果官方公证 Notarized & Stapled） |
 
 校验 DMG 安装包：
 
 ```bash
-shasum -a 256 GocryptKit-1.2.4.dmg
-spctl -a -t open --context context:primary-signature -vv GocryptKit-1.2.4.dmg
+shasum -a 256 GocryptKit-1.2.5.dmg
+spctl -a -t open --context context:primary-signature -vv GocryptKit-1.2.5.dmg
 ```
 
 安装步骤见下面的[安装后第一次使用](#安装后第一次使用)。
@@ -120,7 +120,7 @@ xcodebuild -project GocryptKit.xcodeproj -scheme GocryptKit \
 Scripts/build-dmg.sh
 ```
 
-产物将输出至 `build/dist/GocryptKit-1.2.4.dmg`。
+产物将输出至 `build/dist/GocryptKit-1.2.5.dmg`。
 
 ---
 

@@ -17,6 +17,7 @@ struct VaultRowView: View {
     @State private var viewModel = VaultRowViewModel()
     @State private var editedName = ""
     @State private var isConfirmingRemoval = false
+    @State private var isConfirmingForceUnmount = false
     @FocusState private var passwordFocused: Bool
 
     private var isMounted: Bool { store.isMounted(vault) }
@@ -64,6 +65,7 @@ struct VaultRowView: View {
                 password = ""
                 isShowingPassword = false
                 viewModel.errorMessage = nil
+                viewModel.canForceUnmount = false
             }
         }
         .confirmationDialog(String(localized: "Remove \"\(vault.name)\" from list?"),
@@ -73,6 +75,16 @@ struct VaultRowView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This only removes it from this list. Encrypted directory and data will not be modified, and can be added back later.")
+        }
+        .confirmationDialog(String(localized: "Force unmount \"\(vault.name)\"?"),
+                            isPresented: $isConfirmingForceUnmount,
+                            titleVisibility: .visible) {
+            Button("Force Unmount", role: .destructive) {
+                viewModel.performForceUnmount(vault: vault, actualMountPoint: actualMountPoint, store: store)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Force unmounting immediately detaches the volume. Any unsaved changes in files currently open in other applications may be lost.")
         }
     }
 
@@ -243,10 +255,28 @@ struct VaultRowView: View {
             }
 
             if let errorMessage = viewModel.errorMessage {
-                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if viewModel.canForceUnmount {
+                        HStack {
+                            Button(String(localized: "Force Unmount…")) {
+                                isConfirmingForceUnmount = true
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .tint(.red)
+                            .disabled(viewModel.isBusy)
+
+                            Text(String(localized: "Closes active sessions immediately"))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
         }
     }

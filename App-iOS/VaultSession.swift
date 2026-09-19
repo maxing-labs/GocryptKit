@@ -45,7 +45,7 @@ final class VaultSession {
             self.engine = engine
             self.scopedURL = scoped
             self.isUnlocked = true
-            logger.info("Vault '\(vault.name, privacy: .public)' successfully unlocked")
+            logger.info("Vault '\(vault.name, privacy: .private)' successfully unlocked")
         } catch {
             scoped.stopAccessing()
             logger.error("Unlock failed: \(error.localizedDescription, privacy: .public)")

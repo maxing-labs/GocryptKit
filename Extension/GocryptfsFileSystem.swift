@@ -71,7 +71,7 @@ final class GocryptfsFileSystem: FSUnaryFileSystem, FSUnaryFileSystemOperations,
 
         func tryCredential(account: String) -> GocryptfsEngine? {
             guard let data = KeychainReader.loadCredential(account: account) else {
-                logger.error("tryCredential: loadCredential returned nil for account \(account, privacy: .public)")
+                logger.error("tryCredential: loadCredential returned nil for account \(account, privacy: .private)")
                 return nil
             }
             guard let payload = VaultCredentialPayload.deserialize(from: data) else {

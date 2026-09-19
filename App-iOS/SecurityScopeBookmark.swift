@@ -52,7 +52,7 @@ public final class SecurityScopedURL: @unchecked Sendable {
         guard !isAccessing else { return true }
         isAccessing = url.startAccessingSecurityScopedResource()
         if !isAccessing {
-            logger.error("Failed to obtain security-scoped resource access: \(self.url.path, privacy: .public)")
+            logger.error("Failed to obtain security-scoped resource access: \(self.url.path, privacy: .private)")
         }
         return isAccessing
     }

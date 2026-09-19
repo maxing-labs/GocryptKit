@@ -68,7 +68,7 @@ struct ContentView: View {
     // MARK: - Header
 
     private var appVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.4"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.5"
         return "v\(version)"
     }
 
@@ -78,14 +78,29 @@ struct ContentView: View {
                 Text("GocryptKit")
                     .font(.title2)
                     .fontWeight(.bold)
-                Text(appVersionString)
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.12))
-                    .cornerRadius(4)
+
+                Button {
+                    openAbout()
+                } label: {
+                    Text(appVersionString)
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.12))
+                        .cornerRadius(4)
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "View About GocryptKit", locale: currentLocale))
+
+                Link(destination: URL(string: "https://github.com/maxing-labs/GocryptKit")!) {
+                    Image(systemName: "link.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("GitHub: https://github.com/maxing-labs/GocryptKit")
             }
             Spacer()
             HStack(spacing: 6) {
@@ -180,6 +195,15 @@ struct ContentView: View {
     private func openExtensionSettings() {
         guard let url = URL(string: "x-apple.systempreferences:com.apple.ExtensionsPreferences") else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    private func openAbout() {
+        if let appDelegate = NSApp.delegate as? AppDelegate {
+            appDelegate.openAboutPanel(nil)
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.orderFrontStandardAboutPanel(nil)
+        }
     }
 
     /// Probing spawns an extension process and takes 1-2 seconds, so perform it asynchronously off the main thread.

@@ -146,22 +146,48 @@ final class MountManager: @unchecked Sendable {
 
     private static let mountAttempts = 3
     private static let mountRetryDelay: TimeInterval = 2
+    private static let processTimeoutSeconds: TimeInterval = 15.0
 
-    private static func runMount(cipherDir: URL, mountPoint: URL) throws {
+    /// Executes a system command with strict timeout protection to prevent process hangs.
+    private static func runProcessWithTimeout(executable: String, arguments: [String], timeout: TimeInterval = processTimeoutSeconds) throws -> (status: Int32, stderr: String) {
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/sbin/mount")
-        task.arguments = ["-t", "gocryptfs", cipherDir.path, mountPoint.path]
+        task.executableURL = URL(fileURLWithPath: executable)
+        task.arguments = arguments
         let errPipe = Pipe()
         task.standardError = errPipe
 
         try task.run()
-        task.waitUntilExit()
 
-        if task.terminationStatus != 0 {
-            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
-            let errMsg = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            throw NSError(domain: "GocryptfsMountError", code: Int(task.terminationStatus), userInfo: [
-                NSLocalizedDescriptionKey: "Mount failed (code \(task.terminationStatus)): \(errMsg)"
+        let deadline = Date().addingTimeInterval(timeout)
+        while task.isRunning && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+
+        if task.isRunning {
+            task.terminate()
+            let termDeadline = Date().addingTimeInterval(1.0)
+            while task.isRunning && Date() < termDeadline {
+                Thread.sleep(forTimeInterval: 0.05)
+            }
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(ETIMEDOUT), userInfo: [
+                NSLocalizedDescriptionKey: "Command '\(executable)' timed out after \(Int(timeout)) seconds."
+            ])
+        }
+
+        let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+        let errMsg = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return (task.terminationStatus, errMsg)
+    }
+
+    private static func runMount(cipherDir: URL, mountPoint: URL) throws {
+        let (status, errMsg) = try runProcessWithTimeout(
+            executable: "/sbin/mount",
+            arguments: ["-t", "gocryptfs", cipherDir.path, mountPoint.path]
+        )
+
+        if status != 0 {
+            throw NSError(domain: "GocryptfsMountError", code: Int(status), userInfo: [
+                NSLocalizedDescriptionKey: "Mount failed (code \(status)): \(errMsg)"
             ])
         }
     }
@@ -179,20 +205,15 @@ final class MountManager: @unchecked Sendable {
     }
 
     func unmountVault(mountPoint: URL, force: Bool = false) throws {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/sbin/umount")
-        task.arguments = force ? ["-f", mountPoint.path] : [mountPoint.path]
-        let errPipe = Pipe()
-        task.standardError = errPipe
+        let args = force ? ["-f", mountPoint.path] : [mountPoint.path]
+        let (status, errMsg) = try Self.runProcessWithTimeout(
+            executable: "/sbin/umount",
+            arguments: args
+        )
 
-        try task.run()
-        task.waitUntilExit()
-
-        if task.terminationStatus != 0 {
-            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
-            let errMsg = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            throw NSError(domain: "GocryptfsUnmountError", code: Int(task.terminationStatus), userInfo: [
-                NSLocalizedDescriptionKey: "Unmount failed (code \(task.terminationStatus)): \(errMsg)"
+        if status != 0 {
+            throw NSError(domain: "GocryptfsUnmountError", code: Int(status), userInfo: [
+                NSLocalizedDescriptionKey: "Unmount failed (code \(status)): \(errMsg)"
             ])
         }
 

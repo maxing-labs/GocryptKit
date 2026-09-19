@@ -83,11 +83,15 @@ public enum MountTable {
         return result
     }
 
-    /// Rebinds fixed-size C char tuple arrays from `statfs` to a Swift String.
+    /// Rebinds fixed-size C char tuple arrays from `statfs` to a Swift String,
+    /// explicitly bounded by the tuple's memory size to prevent buffer over-read.
     private static func string<T>(from tuple: T) -> String {
         withUnsafePointer(to: tuple) { ptr in
-            ptr.withMemoryRebound(to: CChar.self,
-                                  capacity: MemoryLayout<T>.size) { String(cString: $0) }
+            ptr.withMemoryRebound(to: CChar.self, capacity: MemoryLayout<T>.size) { cStrPtr in
+                let maxLen = MemoryLayout<T>.size
+                let count = (0..<maxLen).first(where: { cStrPtr[$0] == 0 }) ?? maxLen
+                return String(data: Data(bytes: cStrPtr, count: count), encoding: .utf8) ?? ""
+            }
         }
     }
 }

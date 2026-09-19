@@ -28,21 +28,21 @@ SIP (System Integrity Protection) remains fully enabled — no Reduced Security 
 
 ## Download & Releases
 
-**v1.2.4** — Initial Open Source Release (macOS Apple Silicon)
+**v1.2.5** — Quality, Security & Usability Release (macOS Apple Silicon)
 
-→ [Download on GitHub Releases](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.2.4)
+→ [Download on GitHub Releases](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.2.5)
 
 | Property | Value |
 |---|---|
-| Package | `GocryptKit-1.2.4.dmg` |
+| Package | `GocryptKit-1.2.5.dmg` |
 | Architecture | Apple Silicon (`arm64-only`) |
 | Code Signing | Developer ID Application (Apple Notarized & Stapled) |
 
 Verify the release DMG:
 
 ```bash
-shasum -a 256 GocryptKit-1.2.4.dmg
-spctl -a -t open --context context:primary-signature -vv GocryptKit-1.2.4.dmg
+shasum -a 256 GocryptKit-1.2.5.dmg
+spctl -a -t open --context context:primary-signature -vv GocryptKit-1.2.5.dmg
 ```
 
 See [Getting Started](#getting-started) below for setup instructions.
@@ -124,7 +124,7 @@ To produce an installation DMG:
 Scripts/build-dmg.sh
 ```
 
-Output: `build/dist/GocryptKit-1.2.4.dmg`.
+Output: `build/dist/GocryptKit-1.2.5.dmg`.
 
 ---
 

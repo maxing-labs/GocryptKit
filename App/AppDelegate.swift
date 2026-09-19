@@ -32,6 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.contentView = NSHostingView(rootView: contentView)
         window.makeKeyAndOrderFront(nil)
         self.window = window
+
+        // Defensively sweep any orphan credentials left in Keychain from previous crashes or unmounts
+        MountManager.shared.reapOrphanCredentials(knownVaults: store.vaults)
     }
 
     @objc func showMainWindow(_ sender: Any?) {
@@ -48,6 +51,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         showMainWindow(sender)
     }
 
+    @objc func openAboutPanel(_ sender: Any?) {
+        NSApp.activate(ignoringOtherApps: true)
+        let githubURL = URL(string: "https://github.com/maxing-labs/GocryptKit")!
+        let pStyle = NSMutableParagraphStyle()
+        pStyle.alignment = .center
+
+        let credits = NSMutableAttributedString()
+        let githubText = "GitHub: https://github.com/maxing-labs/GocryptKit"
+        let attr = NSMutableAttributedString(
+            string: githubText,
+            attributes: [
+                .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+                .foregroundColor: NSColor.secondaryLabelColor,
+                .paragraphStyle: pStyle
+            ]
+        )
+        let linkRange = (githubText as NSString).range(of: "https://github.com/maxing-labs/GocryptKit")
+        attr.addAttribute(.link, value: githubURL, range: linkRange)
+        attr.addAttribute(.foregroundColor, value: NSColor.linkColor, range: linkRange)
+        attr.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: linkRange)
+        credits.append(attr)
+
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .credits: credits
+        ])
+    }
+
     private func setupMenu() {
         let mainMenu = NSMenu()
 
@@ -58,9 +88,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let aboutItem = NSMenuItem(
             title: String(localized: "About GocryptKit"),
-            action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
+            action: #selector(openAboutPanel(_:)),
             keyEquivalent: ""
         )
+        aboutItem.target = self
         appMenu.addItem(aboutItem)
 
         let settingsItem = NSMenuItem(
@@ -204,6 +235,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !remaining.isEmpty {
             unmountAllMountedVaults(mounts: remaining)
         }
+        MountManager.shared.reapOrphanCredentials(knownVaults: vaultStore?.vaults ?? [])
     }
 
     private func unmountAllMountedVaults(mounts: [String: MountTable.Entry]) {
