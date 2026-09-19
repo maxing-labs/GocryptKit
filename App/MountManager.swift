@@ -238,9 +238,7 @@ final class MountManager: @unchecked Sendable {
         )
 
         if status != 0 {
-            throw NSError(domain: "GocryptfsMountError", code: Int(status), userInfo: [
-                NSLocalizedDescriptionKey: "Mount failed (code \(status)): \(errMsg)"
-            ])
+            throw MountError.parse(code: Int(status), message: errMsg)
         }
     }
 
@@ -267,9 +265,7 @@ final class MountManager: @unchecked Sendable {
         )
 
         if status != 0 {
-            throw NSError(domain: "GocryptfsUnmountError", code: Int(status), userInfo: [
-                NSLocalizedDescriptionKey: "Unmount failed (code \(status)): \(errMsg)"
-            ])
+            throw UnmountError.parse(code: Int(status), message: errMsg)
         }
 
         if let cipherPath = MountRecordStore.forgetCipherDir(for: mountPoint) {

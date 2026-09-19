@@ -133,6 +133,11 @@ func gcfc_read_file(volumeID C.int, handleID C.int, offset C.uint64_t, dst unsaf
 	f.contentLock.RLock()
 	defer f.contentLock.RUnlock()
 
+	// If the file on disk has size 0, it is an empty file: reading returns 0 (EOF) immediately.
+	if fi, err := f.fd.Stat(); err == nil && fi.Size() == 0 {
+		return 0
+	}
+
 	// doRead 底层使用固定大小（contentenc.MAX_KERNEL_WRITE = 128 KiB）的缓冲池。
 	// 单次请求超长（如 512 KiB 或更大）时若直接传给 doRead 会越界 panic，
 	// 若简单截断为 128 KiB 则会导致上层（如 FSKit / VFS）收到短读并判定为 EIO。

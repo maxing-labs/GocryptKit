@@ -323,36 +323,47 @@ struct VaultRowView: View {
                 : (isMountReadOnly ? vault.readOnlyMountPointPath : vault.mountPointPath)
 
             field(loc("Mount Point")) {
-                HStack(spacing: 6) {
-                    Text(abbreviate(effectivePath))
-                        .font(.callout)
-                        .textSelection(.enabled)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    if isMounted && store.isReadOnly(vault) {
-                        Text(loc("Read-Only"))
-                            .font(.caption2.weight(.semibold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.orange.opacity(0.15))
-                            .foregroundStyle(Color.orange)
-                            .clipShape(Capsule())
-                    } else if !isMounted && isMountReadOnly {
-                        Text(loc("Read-Only"))
-                            .font(.caption2.weight(.semibold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.secondary.opacity(0.15))
-                            .foregroundStyle(.secondary)
-                            .clipShape(Capsule())
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(abbreviate(effectivePath))
+                            .font(.callout)
+                            .textSelection(.enabled)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        if isMounted && store.isReadOnly(vault) {
+                            Text(loc("Read-Only"))
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.orange.opacity(0.15))
+                                .foregroundStyle(Color.orange)
+                                .clipShape(Capsule())
+                        } else if !isMounted && isMountReadOnly {
+                            Text(loc("Read-Only"))
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.secondary.opacity(0.15))
+                                .foregroundStyle(.secondary)
+                                .clipShape(Capsule())
+                        }
+                        Spacer()
+                        if isMounted {
+                            Button(loc("Open")) { openMountPoint(actualMountPoint ?? vault.mountPointPath) }
+                                .controlSize(.small)
+                        } else {
+                            Button(loc("Change…")) { chooseMountPoint() }
+                                .controlSize(.small)
+                        }
                     }
-                    Spacer()
-                    if isMounted {
-                        Button(loc("Open")) { openMountPoint(actualMountPoint ?? vault.mountPointPath) }
-                            .controlSize(.small)
-                    } else {
-                        Button(loc("Change…")) { chooseMountPoint() }
-                            .controlSize(.small)
+
+                    if let warning = mountPointPreflightWarning(for: effectivePath) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle")
+                            Text(warning)
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.orange)
                     }
                 }
             }
@@ -501,5 +512,19 @@ struct VaultRowView: View {
     /// Formats paths under home directory with ~/... to avoid truncating meaningful path suffixes.
     private func abbreviate(_ path: String) -> String {
         (path as NSString).abbreviatingWithTildeInPath
+    }
+
+    private func mountPointPreflightWarning(for path: String) -> String? {
+        guard !isMounted else { return nil }
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: path, isDirectory: &isDir) {
+            if !isDir.boolValue {
+                return loc("Mount point exists as a file, not a directory.")
+            }
+            if let items = try? FileManager.default.contentsOfDirectory(atPath: path), !items.isEmpty {
+                return loc("Target directory exists and is not empty.")
+            }
+        }
+        return nil
     }
 }

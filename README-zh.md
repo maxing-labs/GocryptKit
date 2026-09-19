@@ -31,21 +31,21 @@
 
 ## 下载与体验
 
-**v1.3.7** — 卸载可靠性、UI 交互与易用性增强版（macOS Apple Silicon）
+**v1.3.8** — 架构健壮性、UI 预检与事件驱动同步最终版（macOS Apple Silicon）
 
-→ [前往 GitHub Releases 页面下载](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.3.7)
+→ [前往 GitHub Releases 页面下载](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.3.8)
 
 | 项 | 值 |
 |---|---|
-| 文件 | `GocryptKit-1.3.7.dmg` |
+| 文件 | `GocryptKit-1.3.8.dmg` |
 | 架构 | Apple Silicon (`arm64-only`) |
 | 签名 | Developer ID Application（已通过苹果官方公证 Notarized & Stapled） |
 
 校验 DMG 安装包：
 
 ```bash
-shasum -a 256 GocryptKit-1.3.7.dmg
-spctl -a -t open --context context:primary-signature -vv GocryptKit-1.3.7.dmg
+shasum -a 256 GocryptKit-1.3.8.dmg
+spctl -a -t open --context context:primary-signature -vv GocryptKit-1.3.8.dmg
 ```
 
 安装步骤见下面的[安装后第一次使用](#安装后第一次使用)。
@@ -53,6 +53,14 @@ spctl -a -t open --context context:primary-signature -vv GocryptKit-1.3.7.dmg
 ---
 
 ## 版本更新历史 (What's New)
+
+### v1.3.8 (2026-09-19) — 架构健壮性与深度测试
+- **挂载点预检预警**：在未挂载状态下，展开卡片实时探测挂载点路径，若目标目录已存在且非空，给予非侵入式浅色提醒，避免挂载失败。
+- **类型化错误模型**：在 `VaultCore` 中将挂载与卸载错误封装为强类型的 `MountError` 与 `UnmountError`，彻底告别脆弱的字符串包含判断。
+- **双模事件驱动状态同步**：接入 `NSWorkspace` 的 `didMountNotification` 和 `didUnmountNotification` 系统通知，Finder 弹出/挂载实现毫秒级即时响应，保留 2 秒轮询作为 CLI 兜底。
+- **CLI 增强**：`GocryptKit umount` 支持 `-f` / `--force` 强制卸载参数。
+- **0 字节空文件读取修复**：Go 引擎在读取空文件时直接返回 0 (EOF)，修复原本由于缺乏 Header 抛出 `EIO` 的边缘问题。
+- **完备鲁棒性测试**：新增 `RobustnessTests` 覆盖块边界（0B、4096B、4097B）、8 线程并发读写、密文篡改/位翻转校验拦截等场景（108/108 用例通过）。
 
 ### v1.3.7 (2026-09-19) — 卸载可靠性与 UI 交互增强版
 - **卸载可靠性与交互对齐**：

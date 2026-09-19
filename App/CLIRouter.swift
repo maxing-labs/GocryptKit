@@ -171,13 +171,15 @@ enum CLIRouter {
             }
 
         case "umount":
-            guard arguments.count >= 2 else {
-                print("Usage: GocryptKit umount <mountPoint>")
+            let nonFlagArgs = arguments.dropFirst().filter { !$0.hasPrefix("-") }
+            guard let firstArg = nonFlagArgs.first else {
+                print("Usage: GocryptKit umount <mountPoint> [-f|--force]")
                 exit(1)
             }
-            let mountPath = (arguments[1] as NSString).expandingTildeInPath
+            let force = arguments.contains("-f") || arguments.contains("--force")
+            let mountPath = (firstArg as NSString).expandingTildeInPath
             do {
-                try MountManager.shared.unmountVault(mountPoint: URL(fileURLWithPath: mountPath))
+                try MountManager.shared.unmountVault(mountPoint: URL(fileURLWithPath: mountPath), force: force)
                 print("Successfully unmounted \(mountPath)")
                 exit(0)
             } catch {

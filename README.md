@@ -32,21 +32,21 @@ SIP (System Integrity Protection) remains fully enabled — no Reduced Security 
 
 ## Download & Releases
 
-**v1.3.7** — Unmount Reliability, UI & Usability Release (macOS Apple Silicon)
+**v1.3.8** — Robustness, UI Pre-flight & Event-driven Sync Release (macOS Apple Silicon)
 
-→ [Download on GitHub Releases](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.3.7)
+→ [Download on GitHub Releases](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.3.8)
 
 | Property | Value |
 |---|---|
-| Package | `GocryptKit-1.3.7.dmg` |
+| Package | `GocryptKit-1.3.8.dmg` |
 | Architecture | Apple Silicon (`arm64-only`) |
 | Code Signing | Developer ID Application (Apple Notarized & Stapled) |
 
 Verify the release DMG:
 
 ```bash
-shasum -a 256 GocryptKit-1.3.7.dmg
-spctl -a -t open --context context:primary-signature -vv GocryptKit-1.3.7.dmg
+shasum -a 256 GocryptKit-1.3.8.dmg
+spctl -a -t open --context context:primary-signature -vv GocryptKit-1.3.8.dmg
 ```
 
 See [Getting Started](#getting-started) below for setup instructions.
@@ -54,6 +54,14 @@ See [Getting Started](#getting-started) below for setup instructions.
 ---
 
 ## What's New
+
+### v1.3.8 (2026-09-19) — Robustness & Architecture Enhancements
+- **Mount Point Pre-flight Hint**: Added real-time non-intrusive warning in the vault card when a target mount directory already exists and is not empty or is a file.
+- **Typed Error Architecture**: Introduced `MountError` and `UnmountError` enums in `VaultCore` for structured, type-safe error handling and localization across the app and CLI.
+- **Dual Mount State Sync**: Integrated `NSWorkspace` notifications (`didMountNotification`, `didUnmountNotification`) for instant sub-second UI updates when volumes are mounted or ejected via Finder, backed by periodic polling.
+- **CLI Forced Unmount**: Added `-f` / `--force` flags to `GocryptKit umount` CLI command.
+- **Zero-Byte File Read Fix**: Fixed engine I/O behavior on empty files to return EOF cleanly instead of erroring out.
+- **Comprehensive Test Suite**: Added `RobustnessTests` covering block boundaries (0B, 4096B, 4097B), multi-threaded concurrent read/write, bit-rot/tampering rejection, and typed error parsing (108/108 tests passing).
 
 ### v1.3.7 (2026-09-19) — Unmount Reliability & UI Polish
 - **Unmount Experience & Reliability**:

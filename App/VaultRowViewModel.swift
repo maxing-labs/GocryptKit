@@ -65,8 +65,7 @@ final class VaultRowViewModel: @unchecked Sendable {
             } catch {
                 self.isBusy = false
                 self.errorMessage = Self.humanizeUnmountError(error)
-                let raw = error.localizedDescription.lowercased()
-                let isBusy = raw.contains("busy") || raw.contains("in use")
+                let isBusy = (error as? UnmountError)?.isBusy ?? error.localizedDescription.lowercased().contains("busy")
                 if isBusy {
                     self.canForceUnmount = true
                 }
@@ -133,6 +132,32 @@ final class VaultRowViewModel: @unchecked Sendable {
     }
 
     static func humanize(_ error: Error) -> String {
+        if let mountError = error as? MountError {
+            switch mountError {
+            case .extensionDisabled:
+                return loc("FSKit extension is disabled by system; cannot mount. Go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit, then try again.")
+            case .extensionStartingUp:
+                return loc("Extension is still starting up (known cold start behavior). Please click Mount again.")
+            case .permissionDenied:
+                return loc("Permission denied accessing vault or mount directory.")
+            case .pathNotFound:
+                return loc("Vault directory or mountpoint does not exist.")
+            case .busyOrAlreadyMounted:
+                return loc("Mount point is already mounted or busy.")
+            case .invalidPasswordOrMasterKey:
+                return loc("Authentication failed: invalid password or masterkey.")
+            case .mountPointNotEmpty:
+                return loc("Target mount directory is not empty.")
+            case .generic(let code, let message):
+                let useful = message
+                    .split(separator: "\n")
+                    .filter { !$0.contains("/Library/Filesystems/gocryptfs.fs") }
+                    .joined(separator: "\n")
+                let text = useful.isEmpty ? message : useful
+                return code != 0 ? "\(text) (code \(code))" : text
+            }
+        }
+
         let raw = error.localizedDescription
         if FSModuleProbe.interpret(mountStderr: raw) == .disabled {
             return loc("FSKit extension is disabled by system; cannot mount. Go to System Settings → General → Login Items & Extensions → File System Extensions and enable GocryptKit, then try again.")
@@ -158,6 +183,15 @@ final class VaultRowViewModel: @unchecked Sendable {
     }
 
     static func humanizeUnmountError(_ error: Error) -> String {
+        if let unmountError = error as? UnmountError {
+            switch unmountError {
+            case .busy:
+                return loc("Volume is in use by another application. Please close open files/Finder windows and try again.")
+            case .generic(_, let message):
+                return message
+            }
+        }
+
         let raw = error.localizedDescription
         if raw.contains("Resource busy") {
             return loc("Volume is in use by another application. Please close open files/Finder windows and try again.")

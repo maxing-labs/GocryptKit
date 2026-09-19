@@ -2545,6 +2545,74 @@
           }
         }
       }
+    },
+    "Target directory exists and is not empty.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target directory exists and is not empty."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标挂载目录已存在且非空"
+          }
+        }
+      }
+    },
+    "Mount point exists as a file, not a directory.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mount point exists as a file, not a directory."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "挂载点已存在但为普通文件"
+          }
+        }
+      }
+    },
+    "Target mount directory is not empty.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target mount directory is not empty."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标挂载目录非空"
+          }
+        }
+      }
+    },
+    "Authentication failed: invalid password or masterkey.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authentication failed: invalid password or masterkey."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "认证失败：密码或主密钥错误"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

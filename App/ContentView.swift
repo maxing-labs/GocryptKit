@@ -31,6 +31,12 @@ struct ContentView: View {
         .environment(\.locale, langManager.currentLocale)
         .id(langManager.currentLanguage)
         .onReceive(mountPoll) { _ in store.refreshMountState() }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
+            store.refreshMountState()
+        }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in
+            store.refreshMountState()
+        }
         .onAppear {
             store.refreshMountState()
             refreshExtensionStatus()
