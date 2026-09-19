@@ -77,6 +77,21 @@ if [ -f "$APP/Contents/embedded.provisionprofile" ]; then
 fi
 
 say "6/8  公证 App 并装订（可选）"
+submit_and_wait() {
+  local target="$1"
+  local attempts=3
+  for i in $(seq 1 $attempts); do
+    echo "     提交公证 (尝试 $i/$attempts): $target"
+    if xcrun notarytool submit "$target" --keychain-profile "$NOTARY_PROFILE" --wait --timeout 20m; then
+      return 0
+    fi
+    echo "     ⚠️  公证提交中断或连接超时，5 秒后重试..."
+    sleep 5
+  done
+  echo "     ❌ 公证在 $attempts 次尝试后均失败"
+  return 1
+}
+
 CAN_NOTARIZE=0
 if [ "${SKIP_NOTARIZATION:-0}" != "1" ] && xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
   CAN_NOTARIZE=1
@@ -85,7 +100,7 @@ fi
 if [ "$CAN_NOTARIZE" = "1" ]; then
   rm -f build/GocryptKit-notarize.zip
   ditto -c -k --keepParent "$APP" build/GocryptKit-notarize.zip
-  xcrun notarytool submit build/GocryptKit-notarize.zip --keychain-profile "$NOTARY_PROFILE" --wait | tail -3
+  submit_and_wait build/GocryptKit-notarize.zip
   xcrun stapler staple "$APP"
 else
   echo "     跳过 App 公证（未配置 notary profile 或 SKIP_NOTARIZATION=1）"
@@ -109,7 +124,7 @@ fi
 
 say "8/8  公证 DMG 并装订（可选）"
 if [ "$CAN_NOTARIZE" = "1" ]; then
-  xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait | tail -3
+  submit_and_wait "$DMG"
   xcrun stapler staple "$DMG"
   xcrun stapler validate "$DMG"
   spctl -a -t open --context context:primary-signature -vv "$DMG"

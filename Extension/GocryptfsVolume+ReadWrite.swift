@@ -61,6 +61,9 @@ extension GocryptfsVolume {
                       to item: FSItem,
                       at offset: off_t,
                       replyHandler: @escaping (Int, Error?) -> Void) {
+        guard !isReadOnly else {
+            return replyHandler(0, POSIXError(.EROFS))
+        }
         guard let gcItem = item as? GocryptfsItem else {
             return replyHandler(0, POSIXError(.EINVAL))
         }
@@ -106,6 +109,12 @@ extension GocryptfsVolume {
                          replyHandler: @escaping (Error?) -> Void) {
         guard let gcItem = item as? GocryptfsItem else {
             return replyHandler(POSIXError(.EINVAL))
+        }
+
+        if modes.contains(.write) {
+            guard !isReadOnly else {
+                return replyHandler(POSIXError(.EROFS))
+            }
         }
 
         if gcItem.itemType == .file {

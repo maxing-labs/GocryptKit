@@ -14,16 +14,59 @@ public struct Vault: Codable, Identifiable, Hashable, Sendable {
     public var cipherDirPath: String
     /// Target mount point chosen by user. May not exist yet; created during mount.
     public var mountPointPath: String
+    /// Whether this vault should be mounted in read-only mode by default.
+    public var isReadOnlyDefault: Bool
 
-    public init(id: UUID = UUID(), name: String, cipherDirPath: String, mountPointPath: String) {
+    public init(id: UUID = UUID(), name: String, cipherDirPath: String, mountPointPath: String, isReadOnlyDefault: Bool = false) {
         self.id = id
         self.name = name
         self.cipherDirPath = cipherDirPath
         self.mountPointPath = mountPointPath
+        self.isReadOnlyDefault = isReadOnlyDefault
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, cipherDirPath, mountPointPath, isReadOnlyDefault
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.cipherDirPath = try container.decode(String.self, forKey: .cipherDirPath)
+        self.mountPointPath = try container.decode(String.self, forKey: .mountPointPath)
+        self.isReadOnlyDefault = try container.decodeIfPresent(Bool.self, forKey: .isReadOnlyDefault) ?? false
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(cipherDirPath, forKey: .cipherDirPath)
+        try container.encode(mountPointPath, forKey: .mountPointPath)
+        try container.encode(isReadOnlyDefault, forKey: .isReadOnlyDefault)
     }
 
     public var cipherDirURL: URL { URL(fileURLWithPath: cipherDirPath) }
     public var mountPointURL: URL { URL(fileURLWithPath: mountPointPath) }
+
+    public static let readOnlySuffix = "_READ_ONLY"
+
+    public var readOnlyMountPointPath: String {
+        Self.readOnlyMountPoint(for: mountPointPath)
+    }
+
+    public var readOnlyMountPointURL: URL {
+        URL(fileURLWithPath: readOnlyMountPointPath)
+    }
+
+    public static func readOnlyMountPoint(for path: String) -> String {
+        let normalized = normalize(path: path)
+        if normalized.hasSuffix(readOnlySuffix) {
+            return normalized
+        }
+        return normalized + readOnlySuffix
+    }
 
     /// Standardizes path by resolving `~`, `.`, `..`, and duplicate slashes. **Use this for persistence.**
     /// Does not resolve symlinks: that requires the directory to physically exist on disk,

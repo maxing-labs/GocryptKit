@@ -68,7 +68,7 @@ struct ContentView: View {
     // MARK: - Header
 
     private var appVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.5"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3.0"
         return "v\(version)"
     }
 
@@ -93,14 +93,6 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .help(String(localized: "View About GocryptKit", locale: currentLocale))
-
-                Link(destination: URL(string: "https://github.com/maxing-labs/GocryptKit")!) {
-                    Image(systemName: "link.circle.fill")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .help("GitHub: https://github.com/maxing-labs/GocryptKit")
             }
             Spacer()
             HStack(spacing: 6) {

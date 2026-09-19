@@ -14,24 +14,28 @@ public enum KeychainStore {
     /// Returns errSecSuccess or an OSStatus error code.
     @discardableResult
     public static func saveCredentialStatus(account: String, data: Data) -> OSStatus {
-        let deleteQuery: [String: Any] = [
+        var deleteQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
             kSecAttrAccount as String: account,
-            kSecAttrAccessGroup as String: accessGroup,
-            kSecUseDataProtectionKeychain as String: true
         ]
+        if !accessGroup.isEmpty {
+            deleteQuery[kSecAttrAccessGroup as String] = accessGroup
+            deleteQuery[kSecUseDataProtectionKeychain as String] = true
+        }
         SecItemDelete(deleteQuery as CFDictionary)
 
-        let query: [String: Any] = [
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
             kSecAttrAccount as String: account,
             kSecValueData as String: data,
-            kSecAttrAccessGroup as String: accessGroup,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-            kSecUseDataProtectionKeychain as String: true
         ]
+        if !accessGroup.isEmpty {
+            query[kSecAttrAccessGroup as String] = accessGroup
+            query[kSecUseDataProtectionKeychain as String] = true
+        }
 
         let status = SecItemAdd(query as CFDictionary, nil)
         if status == errSecSuccess {
@@ -50,15 +54,17 @@ public enum KeychainStore {
 
     /// Loads credential data from the shared Data Protection Keychain.
     public static func loadCredential(account: String) -> Data? {
-        let query: [String: Any] = [
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
             kSecAttrAccount as String: account,
-            kSecAttrAccessGroup as String: accessGroup,
-            kSecUseDataProtectionKeychain as String: true,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
+        if !accessGroup.isEmpty {
+            query[kSecAttrAccessGroup as String] = accessGroup
+            query[kSecUseDataProtectionKeychain as String] = true
+        }
 
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
@@ -74,13 +80,15 @@ public enum KeychainStore {
     /// Deletes the credential for the given account from the shared Keychain.
     @discardableResult
     public static func deleteCredential(account: String) -> Bool {
-        let query: [String: Any] = [
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
             kSecAttrAccount as String: account,
-            kSecAttrAccessGroup as String: accessGroup,
-            kSecUseDataProtectionKeychain as String: true
         ]
+        if !accessGroup.isEmpty {
+            query[kSecAttrAccessGroup as String] = accessGroup
+            query[kSecUseDataProtectionKeychain as String] = true
+        }
         let status = SecItemDelete(query as CFDictionary)
         logger.debug("Deleted credential from Keychain for account: \(account, privacy: .private), status=\(status)")
         return status == errSecSuccess || status == errSecItemNotFound

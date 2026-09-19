@@ -32,6 +32,9 @@ extension GocryptfsVolume: FSVolume.XattrOperations {
                          on item: FSItem,
                          policy: FSVolume.SetXattrPolicy,
                          replyHandler: @escaping ((any Error)?) -> Void) {
+        guard !isReadOnly else {
+            return replyHandler(POSIXError(.EROFS))
+        }
         guard let gcItem = item as? GocryptfsItem, let attr = name.string else {
             return replyHandler(POSIXError(.EINVAL))
         }

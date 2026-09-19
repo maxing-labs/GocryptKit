@@ -99,18 +99,31 @@ final class MenuBarManager: NSObject, NSMenuDelegate {
             menu.addItem(emptyItem)
         } else {
             let greenConfig = NSImage.SymbolConfiguration(paletteColors: [.systemGreen])
+            let orangeConfig = NSImage.SymbolConfiguration(paletteColors: [.systemOrange])
             let grayConfig = NSImage.SymbolConfiguration(paletteColors: [.secondaryLabelColor])
 
             for vault in store.vaults {
                 let isMounted = store.isMounted(vault)
+                let isRO = isMounted && store.isReadOnly(vault)
                 let item = NSMenuItem()
-                item.title = vault.name
+                item.title = isRO ? "\(vault.name) (\(String(localized: "Read-Only", locale: currentLocale)))" : vault.name
 
                 if isMounted {
-                    item.image = NSImage(systemSymbolName: "lock.open.fill", accessibilityDescription: "Mounted")?
-                        .withSymbolConfiguration(greenConfig)
+                    item.image = NSImage(systemSymbolName: "lock.open.fill", accessibilityDescription: isRO ? "Mounted (Read-Only)" : "Mounted")?
+                        .withSymbolConfiguration(isRO ? orangeConfig : greenConfig)
 
                     let submenu = NSMenu(title: vault.name)
+
+                    let statusHeader = NSMenuItem(
+                        title: isRO
+                            ? "● \(String(localized: "Mounted (Read-Only)", locale: currentLocale))"
+                            : "● \(String(localized: "Mounted (Read-Write)", locale: currentLocale))",
+                        action: nil,
+                        keyEquivalent: ""
+                    )
+                    statusHeader.isEnabled = false
+                    submenu.addItem(statusHeader)
+                    submenu.addItem(NSMenuItem.separator())
 
                     let actualPath = store.actualMountPoint(vault) ?? vault.mountPointPath
                     let revealItem = NSMenuItem(

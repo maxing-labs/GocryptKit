@@ -48,14 +48,14 @@ cmp_hash() { # name expected actual
 }
 
 cleanup() {
-  for m in "$MOUNT" "$NEWMOUNT"; do
+  for m in "$MOUNT" "$NEWMOUNT" "${NEWMOUNT}_READ_ONLY"; do
     if mount | grep -q " $m "; then "$APP" umount "$m" >/dev/null 2>&1; fi
   done
   if [ "${KEEP:-0}" = "1" ] && [ "$FAIL" -gt 0 ]; then
     echo "现场保留: cipher=$CIPHER mount=$MOUNT"
     echo "          newcipher=$NEWCIPHER newmount=$NEWMOUNT"
   else
-    rm -rf "$CIPHER" "$MOUNT" "$NEWCIPHER" "$NEWMOUNT"
+    rm -rf "$CIPHER" "$MOUNT" "$NEWCIPHER" "$NEWMOUNT" "${NEWMOUNT}_READ_ONLY"
   fi
 }
 trap cleanup EXIT
@@ -397,8 +397,129 @@ qldir=$(mktemp -d); qlmanage -t -s 256 -o "$qldir" "$NEWMOUNT/sample.pdf" >/dev/
 ls "$qldir"/*.png >/dev/null 2>&1 && ok "新 vault 内 sample.pdf QuickLook 渲染成功" || bad "新 vault 内 sample.pdf QuickLook 渲染失败"
 rm -rf "$qldir"
 
+step "15.5 读写模式下的完整 CRUD 验收"
+# Create
+printf "initial content" > "$NEWMOUNT/crud-file.txt"
+mkdir "$NEWMOUNT/crud-sub"
+printf "sub content" > "$NEWMOUNT/crud-sub/nested.txt"
+[ -f "$NEWMOUNT/crud-file.txt" ] && [ -d "$NEWMOUNT/crud-sub" ] && [ -f "$NEWMOUNT/crud-sub/nested.txt" ] \
+  && ok "读写卷下 CRUD [Create] 创建文件与目录成功" || bad "读写卷下 CRUD [Create] 失败"
+
+# Read
+content1="$(cat "$NEWMOUNT/crud-file.txt" 2>/dev/null)"
+content2="$(cat "$NEWMOUNT/crud-sub/nested.txt" 2>/dev/null)"
+[ "$content1" = "initial content" ] && [ "$content2" = "sub content" ] \
+  && ok "读写卷下 CRUD [Read] 读取文件与嵌套内容准确" || bad "读写卷下 CRUD [Read] 失败"
+
+# Update
+printf " appended" >> "$NEWMOUNT/crud-file.txt"
+[ "$(cat "$NEWMOUNT/crud-file.txt" 2>/dev/null)" = "initial content appended" ] \
+  && ok "读写卷下 CRUD [Update] 既有文件追加修改成功" || bad "读写卷下 CRUD [Update] 追加修改失败"
+
+mv "$NEWMOUNT/crud-file.txt" "$NEWMOUNT/crud-file-renamed.txt"
+[ -f "$NEWMOUNT/crud-file-renamed.txt" ] && [ ! -f "$NEWMOUNT/crud-file.txt" ] \
+  && ok "读写卷下 CRUD [Update] 文件重命名成功" || bad "读写卷下 CRUD [Update] 文件重命名失败"
+
+mv "$NEWMOUNT/crud-sub" "$NEWMOUNT/crud-sub-renamed"
+[ -f "$NEWMOUNT/crud-sub-renamed/nested.txt" ] && [ ! -d "$NEWMOUNT/crud-sub" ] \
+  && ok "读写卷下 CRUD [Update] 目录重命名成功" || bad "读写卷下 CRUD [Update] 目录重命名失败"
+
+chmod 600 "$NEWMOUNT/crud-file-renamed.txt" 2>/dev/null \
+  && ok "读写卷下 CRUD [Update] 属性 (chmod) 修改成功" || bad "读写卷下 CRUD [Update] 属性修改失败"
+
+# Delete
+rm -f "$NEWMOUNT/crud-file-renamed.txt"
+rm -rf "$NEWMOUNT/crud-sub-renamed"
+[ ! -e "$NEWMOUNT/crud-file-renamed.txt" ] && [ ! -e "$NEWMOUNT/crud-sub-renamed" ] \
+  && ok "读写卷下 CRUD [Delete] 删除文件与目录成功" || bad "读写卷下 CRUD [Delete] 失败"
+
 step "16. 收尾卸载新 vault"
 "$APP" umount "$NEWMOUNT" >/dev/null 2>&1 && ok "新 vault 卸载成功" || bad "新 vault 卸载失败"
+
+step "17. 只读模式挂载 (Read-Only Mount)、_READ_ONLY 后缀与 CRUD 拦截验收"
+ROMOUNT="${NEWMOUNT}_READ_ONLY"
+if printf '%s\n' "$NEWPASSWORD" | "$APP" mount "$NEWCIPHER" "$NEWMOUNT" --readonly --password-stdin >/dev/null 2>&1; then
+  ok "只读模式挂载命令执行成功"
+else
+  bad "只读模式挂载命令执行失败"
+fi
+
+if mount | grep -q " $ROMOUNT "; then
+  ok "只读挂载点自动附加 _READ_ONLY 后缀 ($ROMOUNT)"
+else
+  bad "未在预期的 _READ_ONLY 挂载点找到卷: $(mount | grep gocryptfs || true)"
+fi
+
+VOL_NAME="$(swift -e 'import Foundation; let url = URL(fileURLWithPath: "'"$ROMOUNT"'"); print((try? url.resourceValues(forKeys: [.volumeNameKey]))?.volumeName ?? "")')"
+if [[ "$VOL_NAME" == *"_READ_ONLY"* ]]; then
+  ok "Finder 宗卷显示名称包含 _READ_ONLY 后缀 ($VOL_NAME)"
+else
+  bad "Finder 宗卷显示名称未带 _READ_ONLY 后缀 (实际为: $VOL_NAME)"
+fi
+
+# ── CRUD [Read]: 允许 ──
+if [ -f "$ROMOUNT/sample.txt" ]; then
+  ok "只读卷下 CRUD [Read] 文件正常读取"
+else
+  bad "只读卷下 CRUD [Read] 文件读取失败"
+fi
+
+if [ -d "$ROMOUNT" ] && [ "$(ls -A "$ROMOUNT" | wc -l)" -gt 0 ]; then
+  ok "只读卷下 CRUD [Read] 目录正常遍历"
+else
+  bad "只读卷下 CRUD [Read] 目录遍历失败"
+fi
+
+# ── CRUD [Create]: 拦截 ──
+if touch "$ROMOUNT/create-blocked.txt" >/dev/null 2>&1; then
+  bad "只读卷下 CRUD [Create] touch 意外成功"
+  rm -f "$ROMOUNT/create-blocked.txt"
+else
+  ok "只读卷下 CRUD [Create] 禁止 touch 新建文件 (拦截成功)"
+fi
+
+if mkdir "$ROMOUNT/create-dir-blocked" >/dev/null 2>&1; then
+  bad "只读卷下 CRUD [Create] mkdir 意外成功"
+  rmdir "$ROMOUNT/create-dir-blocked"
+else
+  ok "只读卷下 CRUD [Create] 禁止 mkdir 创建目录 (拦截成功)"
+fi
+
+# ── CRUD [Update]: 拦截 ──
+if ( echo "append-attack" >> "$ROMOUNT/sample.txt" ) >/dev/null 2>&1; then
+  bad "只读卷下 CRUD [Update] 追加修改意外成功"
+else
+  ok "只读卷下 CRUD [Update] 禁止追加写入既有文件 (拦截成功)"
+fi
+
+if mv "$ROMOUNT/sample.txt" "$ROMOUNT/sample-renamed.txt" >/dev/null 2>&1; then
+  bad "只读卷下 CRUD [Update] mv 重命名意外成功"
+else
+  ok "只读卷下 CRUD [Update] 禁止重命名文件 (拦截成功)"
+fi
+
+if chmod 777 "$ROMOUNT/sample.txt" >/dev/null 2>&1; then
+  bad "只读卷下 CRUD [Update] chmod 属性修改意外成功"
+else
+  ok "只读卷下 CRUD [Update] 禁止修改文件属性 (拦截成功)"
+fi
+
+# ── CRUD [Delete]: 拦截 ──
+if rm -f "$ROMOUNT/sample.txt" >/dev/null 2>&1; then
+  bad "只读卷下 CRUD [Delete] rm 意外成功"
+else
+  ok "只读卷下 CRUD [Delete] 禁止删除既有文件 (拦截成功)"
+fi
+
+# ── 卸载与清理 ──
+"$APP" umount "$ROMOUNT" >/dev/null 2>&1 && ok "只读卷卸载成功" || bad "只读卷卸载失败"
+mount | grep -q " $ROMOUNT " && bad "只读卷卸载后仍在 mount 表中" || ok "只读卷已从 mount 表移除"
+
+if [ ! -d "$ROMOUNT" ]; then
+  ok "卸载后自动清理了 _READ_ONLY 临时空目录"
+else
+  bad "卸载后未清理 _READ_ONLY 临时目录"
+fi
 
 printf '\n\033[1m═══ 结果: %d 通过, %d 失败 ═══\033[0m\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ] || exit 1

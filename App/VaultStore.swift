@@ -129,4 +129,15 @@ final class VaultStore {
         copy.mountPointPath = normalized
         update(copy)
     }
+
+    func isReadOnly(_ vault: Vault) -> Bool {
+        mounts[Vault.canonicalKey(path: vault.cipherDirPath)]?.isReadOnly ?? false
+    }
+
+    func setDefaultReadOnly(_ vault: Vault, isReadOnly: Bool) {
+        guard isReadOnly != vault.isReadOnlyDefault else { return }
+        var copy = vault
+        copy.isReadOnlyDefault = isReadOnly
+        update(copy)
+    }
 }

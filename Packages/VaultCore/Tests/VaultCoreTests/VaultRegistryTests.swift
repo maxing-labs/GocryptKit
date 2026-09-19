@@ -146,6 +146,36 @@ final class VaultRegistryTests: XCTestCase {
         let perms = attrs[.posixPermissions] as? Int
         XCTAssertEqual(perms, 0o600, "vaults.json must be restricted to 0600 permissions")
     }
+
+    func testVaultBackwardsCompatibilityWithoutReadOnlyField() throws {
+        let legacyJSON = """
+        {
+            "id": "A1B2C3D4-E5F6-7890-1234-56789ABCDEF0",
+            "name": "LegacyVault",
+            "cipherDirPath": "/tmp/legacy",
+            "mountPointPath": "/tmp/legacy_mount"
+        }
+        """.data(using: .utf8)!
+
+        let vault = try JSONDecoder().decode(Vault.self, from: legacyJSON)
+        XCTAssertEqual(vault.name, "LegacyVault")
+        XCTAssertFalse(vault.isReadOnlyDefault, "Missing isReadOnlyDefault in legacy JSON must decode to false")
+    }
+
+    func testVaultRoundTripWithReadOnlyDefault() throws {
+        let vault = Vault(
+            id: UUID(),
+            name: "ROVault",
+            cipherDirPath: "/tmp/ro",
+            mountPointPath: "/tmp/ro_mount",
+            isReadOnlyDefault: true
+        )
+        let encoded = try JSONEncoder().encode(vault)
+        let decoded = try JSONDecoder().decode(Vault.self, from: encoded)
+        XCTAssertEqual(decoded.id, vault.id)
+        XCTAssertEqual(decoded.name, vault.name)
+        XCTAssertTrue(decoded.isReadOnlyDefault)
+    }
 }
 
 final class MountTableTests: XCTestCase {
@@ -173,6 +203,19 @@ final class MountTableTests: XCTestCase {
             // Key must be a file path, not containing a file:// scheme.
             XCTAssertTrue(key.hasPrefix("/"), "Key is not an absolute path: \(key)")
         }
+    }
+
+    func testMountTableReadOnlyFlag() {
+        let entries = MountTable.entries()
+        // On modern macOS with APFS system sealed snapshot, "/" is mounted read-only.
+        if let root = entries.first(where: { $0.mountPoint == "/" }) {
+            XCTAssertTrue(root.isReadOnly, "macOS system root snapshot should be read-only")
+        }
+        // Custom entry sanity check
+        let customRO = MountTable.Entry(fileSystemType: "gocryptfs", source: "file:///tmp/c", mountPoint: "/tmp/m", isReadOnly: true)
+        XCTAssertTrue(customRO.isReadOnly)
+        let customRW = MountTable.Entry(fileSystemType: "gocryptfs", source: "file:///tmp/c", mountPoint: "/tmp/m", isReadOnly: false)
+        XCTAssertFalse(customRW.isReadOnly)
     }
 }
 
@@ -233,5 +276,17 @@ final class MountSourceDecodingTests: XCTestCase {
     /// preventing external drive paths from mutating when disconnected.
     func testNormalizeDoesNotResolveSymlinks() {
         XCTAssertEqual(Vault.normalize(path: "/tmp/somewhere"), "/tmp/somewhere")
+    }
+
+    func testReadOnlyMountPointSuffix() {
+        XCTAssertEqual(Vault.readOnlySuffix, "_READ_ONLY")
+        XCTAssertEqual(Vault.readOnlyMountPoint(for: "/tmp/vault"), "/tmp/vault_READ_ONLY")
+        XCTAssertEqual(Vault.readOnlyMountPoint(for: "/tmp/vault_READ_ONLY"), "/tmp/vault_READ_ONLY")
+        XCTAssertEqual(Vault.readOnlyMountPoint(for: "~/Volumes/my-vault"),
+                       "\(FileManager.default.homeDirectoryForCurrentUser.path)/Volumes/my-vault_READ_ONLY")
+
+        let vault = Vault(name: "Test", cipherDirPath: "/tmp/c", mountPointPath: "/tmp/m")
+        XCTAssertEqual(vault.readOnlyMountPointPath, "/tmp/m_READ_ONLY")
+        XCTAssertEqual(vault.readOnlyMountPointURL.path, "/tmp/m_READ_ONLY")
     }
 }

@@ -120,7 +120,7 @@ enum CLIRouter {
 
         case "mount":
             guard arguments.count >= 3 else {
-                print("Usage: GocryptKit mount <cipherDir> <mountPoint> [--password-stdin]")
+                print("Usage: GocryptKit mount <cipherDir> <mountPoint> [--readonly|-r] [--password-stdin]")
                 exit(1)
             }
             let cipherPath = (arguments[1] as NSString).expandingTildeInPath
@@ -154,13 +154,16 @@ enum CLIRouter {
                 exit(1)
             }
 
+            let readOnly = arguments.contains("--readonly") || arguments.contains("-r") || arguments.contains("--ro")
+
             do {
                 try MountManager.shared.mountVaultSync(
                     cipherDir: URL(fileURLWithPath: cipherPath),
                     mountPoint: URL(fileURLWithPath: mountPath),
-                    password: validPassword
+                    password: validPassword,
+                    readOnly: readOnly
                 )
-                print("Successfully mounted \(cipherPath) on \(mountPath)")
+                print("Successfully mounted \(cipherPath) on \(mountPath)\(readOnly ? " (read-only)" : "")")
                 exit(0)
             } catch {
                 fputs("Mount error: \(error.localizedDescription)\n", stderr)

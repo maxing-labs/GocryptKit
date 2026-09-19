@@ -18,14 +18,16 @@ final class GocryptfsVolume: FSVolume,
     let engine: GocryptfsEngine
     let cipherURL: URL
     let rootItem: GocryptfsItem
+    let isReadOnly: Bool
 
     let cacheLock = NSLock()
     var pathCache: [String: GocryptfsItem] = [:]
     var inodeCache: [UInt64: GocryptfsItem] = [:]
 
-    init(engine: GocryptfsEngine, cipherURL: URL) throws {
+    init(engine: GocryptfsEngine, cipherURL: URL, volumeName: String? = nil, isReadOnly: Bool = false) throws {
         self.engine = engine
         self.cipherURL = cipherURL
+        self.isReadOnly = isReadOnly
 
         var rootStat = stat()
         if lstat(cipherURL.path, &rootStat) != 0 {
@@ -44,9 +46,22 @@ final class GocryptfsVolume: FSVolume,
         self.pathCache[""] = root
         self.inodeCache[rootStat.st_ino] = root
 
-        let volName = FSFileName(string: cipherURL.lastPathComponent + "_gocryptfs")
+        let nameString: String
+        if let custom = volumeName, !custom.isEmpty {
+            nameString = custom
+        } else {
+            let baseName = cipherURL.lastPathComponent
+            nameString = isReadOnly ? "\(baseName)\(Vault.readOnlySuffix)" : baseName
+        }
+        let volName = FSFileName(string: nameString)
         super.init(volumeID: FSVolume.Identifier(uuid: UUID()), volumeName: volName)
-        logger.info("Initialized GocryptfsVolume for \(cipherURL.path, privacy: .private)")
+        self.name = volName
+        logger.info("Initialized GocryptfsVolume '\(nameString, privacy: .public)' for \(cipherURL.path, privacy: .private) (readOnly: \(isReadOnly))")
+    }
+
+    @available(macOS 26.4, *)
+    public var requestedMountOptions: FSVolume.MountOptions {
+        isReadOnly ? .readOnly : []
     }
 
     // MARK: - FSVolume.Operations
@@ -116,7 +131,12 @@ final class GocryptfsVolume: FSVolume,
     }
 
     public func setVolumeName(_ name: FSFileName, replyHandler: @escaping (FSFileName?, Error?) -> Void) {
-        replyHandler(nil, POSIXError(.ENOTSUP))
+        guard !isReadOnly else {
+            return replyHandler(nil, POSIXError(.EROFS))
+        }
+        self.name = name
+        logger.info("Updated volumeName to '\(name.string ?? "", privacy: .public)'")
+        replyHandler(name, nil)
     }
 
     public func reclaimItem(_ item: FSItem, replyHandler: @escaping (Error?) -> Void) {

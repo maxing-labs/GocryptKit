@@ -15,6 +15,9 @@ extension GocryptfsVolume {
                            inDirectory directory: FSItem,
                            attributes: FSItem.SetAttributesRequest,
                            replyHandler: @escaping (FSItem?, FSFileName?, Error?) -> Void) {
+        guard !isReadOnly else {
+            return replyHandler(nil, nil, POSIXError(.EROFS))
+        }
         guard let dirItem = directory as? GocryptfsItem, let nameString = name.string else {
             return replyHandler(nil, nil, POSIXError(.EINVAL))
         }
@@ -87,6 +90,9 @@ extension GocryptfsVolume {
                                    attributes newAttributes: FSItem.SetAttributesRequest,
                                    linkContents contents: FSFileName,
                                    replyHandler: @escaping (FSItem?, FSFileName?, Error?) -> Void) {
+        if isReadOnly {
+            return replyHandler(nil, nil, POSIXError(.EROFS))
+        }
         replyHandler(nil, nil, POSIXError(.ENOTSUP))
     }
 
@@ -94,6 +100,9 @@ extension GocryptfsVolume {
                            named name: FSFileName,
                            inDirectory directory: FSItem,
                            replyHandler: @escaping (FSFileName?, Error?) -> Void) {
+        if isReadOnly {
+            return replyHandler(nil, POSIXError(.EROFS))
+        }
         replyHandler(nil, POSIXError(.ENOTSUP))
     }
 
@@ -101,6 +110,9 @@ extension GocryptfsVolume {
                            named name: FSFileName,
                            fromDirectory directory: FSItem,
                            replyHandler: @escaping (Error?) -> Void) {
+        guard !isReadOnly else {
+            return replyHandler(POSIXError(.EROFS))
+        }
         guard let gcItem = item as? GocryptfsItem else {
             return replyHandler(POSIXError(.EINVAL))
         }
@@ -151,6 +163,9 @@ extension GocryptfsVolume {
                            inDirectory destinationDirectory: FSItem,
                            overItem: FSItem?,
                            replyHandler: @escaping (FSFileName?, Error?) -> Void) {
+        guard !isReadOnly else {
+            return replyHandler(nil, POSIXError(.EROFS))
+        }
         guard let fromItem = item as? GocryptfsItem,
               let dstDir = destinationDirectory as? GocryptfsItem,
               let dstNameString = destinationName.string else {
@@ -209,6 +224,9 @@ extension GocryptfsVolume {
     public func setAttributes(_ newAttributes: FSItem.SetAttributesRequest,
                               on item: FSItem,
                               replyHandler: @escaping (FSItem.Attributes?, Error?) -> Void) {
+        guard !isReadOnly else {
+            return replyHandler(nil, POSIXError(.EROFS))
+        }
         guard let gcItem = item as? GocryptfsItem else {
             return replyHandler(nil, POSIXError(.EINVAL))
         }

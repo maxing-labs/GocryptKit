@@ -8,21 +8,23 @@ final class VaultRowViewModel: @unchecked Sendable {
     var errorMessage: String?
     var canForceUnmount: Bool = false
 
-    func performMount(vault: Vault, password: String, store: VaultStore) {
+    func performMount(vault: Vault, password: String, readOnly: Bool = false, store: VaultStore) {
         guard !password.isEmpty else { return }
         errorMessage = nil
         canForceUnmount = false
         isBusy = true
         let cipherDir = vault.cipherDirURL
-        let mountPoint = vault.mountPointURL
+        let mountPoint = readOnly ? vault.readOnlyMountPointURL : vault.mountPointURL
         let pwd = password
+        let ro = readOnly
 
         Task.detached(priority: .userInitiated) {
             do {
                 try await MountManager.shared.mountVault(
                     cipherDir: cipherDir,
                     mountPoint: mountPoint,
-                    password: pwd
+                    password: pwd,
+                    readOnly: ro
                 )
                 await MainActor.run {
                     self.isBusy = false

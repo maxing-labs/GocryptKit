@@ -19,11 +19,14 @@ public enum MountTable {
         public let source: String
         /// `f_mntonname`, target mount point.
         public let mountPoint: String
+        /// Whether the mount is read-only (MNT_RDONLY flag set in kernel statfs).
+        public let isReadOnly: Bool
 
-        public init(fileSystemType: String, source: String, mountPoint: String) {
+        public init(fileSystemType: String, source: String, mountPoint: String, isReadOnly: Bool = false) {
             self.fileSystemType = fileSystemType
             self.source = source
             self.mountPoint = mountPoint
+            self.isReadOnly = isReadOnly
         }
 
         /// Decodes `source` into a local path. FSKit writes ciphertext directories as percent-encoded
@@ -68,9 +71,12 @@ public enum MountTable {
         guard actual > 0 else { return [] }
 
         return buffer.prefix(Int(actual)).map { fs in
-            Entry(fileSystemType: string(from: fs.f_fstypename),
-                  source: string(from: fs.f_mntfromname),
-                  mountPoint: string(from: fs.f_mntonname))
+            let mountPoint = string(from: fs.f_mntonname)
+            let isRO = ((fs.f_flags & UInt32(MNT_RDONLY)) != 0) || mountPoint.hasSuffix(Vault.readOnlySuffix)
+            return Entry(fileSystemType: string(from: fs.f_fstypename),
+                         source: string(from: fs.f_mntfromname),
+                         mountPoint: mountPoint,
+                         isReadOnly: isRO)
         }
     }
 

@@ -11,8 +11,8 @@ public enum KeychainConfig {
     /// 3. Default fallback `QBFSP2CHNW.com.xwei.GocryptfsKit`
     public static var accessGroup: String {
         #if DEBUG
-        if let env = ProcessInfo.processInfo.environment["GOCRYPTFSKIT_KEYCHAIN_ACCESS_GROUP"], !env.isEmpty {
-            return env
+        if let env = ProcessInfo.processInfo.environment["GOCRYPTFSKIT_KEYCHAIN_ACCESS_GROUP"] {
+            return (env == "NONE" || env.isEmpty) ? "" : env
         }
         #endif
         if let plist = Bundle.main.object(forInfoDictionaryKey: "KeychainAccessGroup") as? String, !plist.isEmpty {
