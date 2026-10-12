@@ -2,182 +2,110 @@
   <img src="Art/AppIcon.png" width="128" height="128" alt="GocryptKit Icon">
 </p>
 
-# GocryptKit
+<h1 align="center">GocryptKit</h1>
 
-Native, driverless, high-security [gocryptfs](https://github.com/rfjakob/gocryptfs) encrypted vault manager for macOS, powered by Apple's modern **FSKit** framework.
+<p align="center">
+  <b>Native, driverless, high-security <a href="https://github.com/rfjakob/gocryptfs">gocryptfs</a> encrypted vault manager for macOS, powered by Apple's modern FSKit framework.</b>
+</p>
 
-**Zero kexts. Zero macFUSE. Zero sudo. Zero security compromises.**  
-SIP (System Integrity Protection) remains fully enabled — no Reduced Security required, no FUSE-T needed.
+<p align="center">
+  <b>Zero kexts · Zero macFUSE · Zero sudo · Zero security compromises.</b><br>
+  SIP (System Integrity Protection) remains fully enabled — no Reduced Security required, no FUSE-T needed.
+</p>
 
-[中文文档 (README in Chinese)](README-zh.md)
+<p align="center">
+  <a href="https://github.com/maxing-labs/GocryptKit/releases/latest"><img src="https://img.shields.io/github/v/release/maxing-labs/GocryptKit?color=blue&logo=github&label=Release" alt="Latest Release"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%2026%2B%20(Apple%20Silicon)-black?logo=apple" alt="Platform">
+  <img src="https://img.shields.io/badge/FSKit-Native%20Driverless-purple" alt="FSKit Native">
+  <a href="https://github.com/maxing-labs/GocryptKit/releases/latest"><img src="https://img.shields.io/badge/Developer%20ID-Signed%2C%20not%20notarized-yellow?logo=apple" alt="Developer ID signed, not notarized"></a>
+  <img src="https://img.shields.io/badge/e2e%20Tests-114%2F114%20Passing-success" alt="Tests">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0%20w%2F%20App%20Store%20Exception-orange" alt="License"></a>
+</p>
+
+<p align="center">
+  <a href="README-zh.md"><b>🇨🇳 中文文档 (README in Chinese)</b></a>
+</p>
+
+---
+
+<p align="center">
+  <img src="Art/screenshots/mount-demo.gif" width="720" alt="GocryptKit Native Mount & Finder Integration Demo">
+</p>
+
+---
+
+## Why GocryptKit?
+
+Mounting encrypted vaults on Apple Silicon Macs has historically forced users into difficult trade-offs:
+1. **macFUSE / Kernel Extensions**: Requires rebooting into macOS Recovery and downgrading system security to **"Reduced Security"**, exposing the entire machine to kernel-level vulnerabilities and stability panics.
+2. **Proprietary Commercial Wrappers**: Closed-source black boxes cannot be audited for cryptographic backdoors, zero-day vulnerabilities, or silent data leakage.
+3. **Container-based Encryption (e.g. VeraCrypt, DMG)**: Modifying a single 10 KB file causes gigabytes of whole-disk images to re-upload on cloud sync drives (Dropbox, iCloud, OneDrive).
+
+**GocryptKit** is built from the ground up for modern macOS:
+- **Zero Driver Installs**: Built on Apple's first-party **FSKit** (User-space File System) architecture.
+- **Per-File Encryption**: Fully compatible with the battle-tested [gocryptfs](https://github.com/rfjakob/gocryptfs) format. Modifying one file only syncs that single encrypted chunk.
+- **100% Open Source & Auditable**: Audited memory wiping (`memset_s`), zero credential persistence in shell history, and strict TLV tagged Keychain transport.
+
+### Feature Comparison Matrix
+
+| Solution | Open Source | Read / Write | Architecture | SIP Intact (No Reduced Security) | Cloud Sync Friendly (Per-File Encryption) | Cross-Platform (Linux / Android) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **GocryptKit** | ✅ Yes (GPLv3) | ✅ Native Full R/W | **Apple Native FSKit** | ✅ Yes (Fully Intact) | ✅ Yes (gocryptfs standard) | ✅ Yes (Linux / DroidFS) |
+| **macFUSE + gocryptfs** | ✅ Yes | ✅ Full R/W | Kernel Extension (`kext`) | ❌ No (Requires Recovery downgrade) | ✅ Yes | ✅ Yes |
+| **MyCryptFS** | ❌ No (Commercial) | ✅ Full R/W | File Provider API | ✅ Yes | ✅ Yes | ⚠️ Compatible format (Closed Source) |
+| **Cryptomator** | ✅ Yes | ✅ Full R/W | FUSE-T / WebDAV | ✅ Yes | ✅ Yes | ❌ Proprietary format (Non-gocryptfs) |
+| **VeraCrypt** | ✅ Yes | ✅ Full R/W | Virtual Disk + macFUSE | ❌ No (Requires Recovery downgrade) | ❌ No (Full container re-upload) | ✅ Yes |
+| **macOS Encrypted DMG** | ⚠️ System Built-in | ✅ Full R/W | APFS Sparse Image | ✅ Yes | ❌ No (Frequent sync conflicts) | ❌ Mac only |
 
 ---
 
 ## Highlights & Features
 
-- **Apple Native Integration**: Built on macOS FSKit (User-space File System framework). Mounts appear directly in Finder, Terminal, and standard file dialogs.
+<p align="center">
+  <img src="Art/screenshots/finder-volume-flow.png" width="100%" alt="GocryptKit Finder Volume Integration Workflow">
+</p>
+
+- **Apple Native Integration**: Built on macOS FSKit. Mounted decrypted volumes appear natively in Finder, Terminal, Spotlight, and standard open/save file dialogs.
 - **Hardened Credential Security**: 
-  - TLV-tagged Keychain protocol (consume-on-mount / burn-after-reading).
-  - Explicit in-memory scrubbing (`memset_s`) for MasterKeys, passwords, and scrypt buffers to prevent secrets from landing on swap or core dumps.
-  - CLI never exposes passwords in process tables (`ps`) or shell history (interactive no-echo input or `--password-stdin` pipeline).
-- **Physical Handle Concurrency Isolation**: Read and write file descriptors are physically decoupled with granular reader-writer locks, eliminating kernel `EBADF` race conditions.
-- **Native Extended Attributes (xattr)**: Full macOS xattr support encrypted via EME + DirIV (AES-GCM), preventing `._*` AppleDouble file pollution.
-- **MenuBar & App Experience**:
-  - Live status item with dynamic lock state icons (`lock.open.fill` when mounted).
-  - Unmount debounce & mutual exclusion locks.
-  - Aggregated conflict dialog when multiple volumes encounter `EBUSY`.
-- **Modern SwiftUI Client**: Effortlessly create new encrypted vaults or mount existing directories. Real-time kernel mount table synchronization (`getfsstat`).
+  - **Burn-after-reading**: TLV-tagged Keychain protocol (`VCP1`) safely passes credentials and physically scrubs them immediately upon volume mount.
+  - **Memory Scrubbing**: Explicit in-memory scrubbing (`memset_s`) for MasterKeys, passwords, and scrypt buffers to eliminate plaintext leaks in swap or crash dumps.
+  - **Leak-proof CLI**: Never exposes passwords in process tables (`ps`) or shell history (interactive masked input or `--password-stdin` pipeline).
+- **Physical Handle Concurrency Isolation**: Independent file descriptors for read and write paths with granular reader-writer synchronization, eliminating kernel `EBADF` race conditions.
+- **Native Extended Attributes (xattr)**: Full macOS xattr support encrypted via EME + DirIV (AES-GCM), preventing `._*` AppleDouble file pollution on cloud storage.
+- **Polished MenuBar & App Experience**:
+  - Live menu bar status item with dynamic lock state icons (`lock.open.fill` when mounted).
+  - Unmount debounce, mutual exclusion locks, and intelligent aggregated conflict dialog when volumes encounter `EBUSY`.
+  - Modern SwiftUI client with real-time kernel mount table synchronization (`getfsstat` & `NSWorkspace` mount notifications).
+
+<p align="center">
+  <img src="Art/screenshots/menubar-dropdown.png" width="360" alt="GocryptKit MenuBar Quick Access">
+</p>
 
 ---
 
 ## Download & Releases
 
-**v1.3.8** — Robustness, UI Pre-flight & Event-driven Sync Release (macOS Apple Silicon)
+**v1.4.2** — Accurate Error Codes, rolling up the v1.3.9 – v1.4.1 security and data-integrity fixes (macOS Apple Silicon)
 
-→ [Download on GitHub Releases](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.3.8)
+→ [Download GocryptKit-1.4.2.dmg on GitHub Releases](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.4.2)
 
 | Property | Value |
 |---|---|
-| Package | `GocryptKit-1.3.8.dmg` |
+| Package | `GocryptKit-1.4.2.dmg` |
+| SHA-256 | `a9d9e51f0e42f87086457fce4b1b1b40f442666690ebed17f4aa1fbe75ff0931` |
 | Architecture | Apple Silicon (`arm64-only`) |
-| Code Signing | Developer ID Application (Apple Notarized & Stapled) |
+| Code Signing | Developer ID Application (Team `QBFSP2CHNW`), **signed but not notarized** |
 
-Verify the release DMG:
+> **Not notarized since v1.3.9.** The maintainer's Apple Developer Program membership has lapsed, so builds after v1.3.8 are signed with the Developer ID certificate but carry no Apple notarization ticket. Gatekeeper blocks the first launch of such an app: in `/Applications`, **right-click `GocryptKit.app` → Open**, or click **Open Anyway** under **System Settings → Privacy & Security**. Everything else, the file system extension included, works as before. [v1.3.8](https://github.com/maxing-labs/GocryptKit/releases/tag/v1.3.8) is the last notarized build, but it lacks every fix listed in [CHANGELOG.md](CHANGELOG.md) from v1.3.9 on.
+
+Verify the download:
 
 ```bash
-shasum -a 256 GocryptKit-1.3.8.dmg
-spctl -a -t open --context context:primary-signature -vv GocryptKit-1.3.8.dmg
+shasum -a 256 GocryptKit-1.4.2.dmg
+# after dragging the app to /Applications: the signature must be valid and belong to team QBFSP2CHNW
+codesign --verify --deep --strict --verbose=2 /Applications/GocryptKit.app
+codesign -dv /Applications/GocryptKit.app 2>&1 | grep TeamIdentifier
 ```
-
-See [Getting Started](#getting-started) below for setup instructions.
-
----
-
-## What's New
-
-### v1.3.8 (2026-09-19) — Robustness & Architecture Enhancements
-- **Mount Point Pre-flight Hint**: Added real-time non-intrusive warning in the vault card when a target mount directory already exists and is not empty or is a file.
-- **Card Layout & Writable Toggle**: Added localized "Writable" label adjacent to the mount mode switch toggle, and placed "Mount Point" above "Encrypted Directory" for a more natural top-down workflow.
-- **Typed Error Architecture**: Introduced `MountError` and `UnmountError` enums in `VaultCore` for structured, type-safe error handling and localization across the app and CLI.
-- **Dual Mount State Sync**: Integrated `NSWorkspace` notifications (`didMountNotification`, `didUnmountNotification`) for instant sub-second UI updates when volumes are mounted or ejected via Finder, backed by periodic polling.
-- **CLI Forced Unmount**: Added `-f` / `--force` flags to `GocryptKit umount` CLI command.
-- **Zero-Byte File Read Fix**: Fixed engine I/O behavior on empty files to return EOF cleanly instead of erroring out.
-- **Comprehensive Test Suite**: Added `RobustnessTests` covering block boundaries (0B, 4096B, 4097B), multi-threaded concurrent read/write, bit-rot/tampering rejection, and typed error parsing (108/108 tests passing).
-
-### v1.3.7 (2026-09-19) — Unmount Reliability & UI Polish
-- **Unmount Experience & Reliability**:
-  - **Busy Volume Handling**: Fixed silent unmount failures on in-use volumes. When a vault has open file handles (e.g. media players or Finder), clicking Unmount in the main window now immediately presents an alert offering "Force Unmount", ensuring 100% parity with the menu bar tray.
-  - **Auto-expand on Error**: Automatically expands the vault card and displays humanized error diagnostics and inline force-unmount controls if unmounting is cancelled or blocked.
-  - **Mount Path Fallback**: Hardened mount point path resolution with automatic fallbacks for read-only suffixes (`_READ_ONLY`) and live kernel mount table queries.
-- **UI & Layout**:
-  - **Mount Mode Switch Toggle**: Upgraded the temporary read-only mount checkbox to an intuitive macOS native Switch toggle. Switching ON selects read-write mode ("Mount in read-write mode"), while switching OFF activates read-only mode ("Mount in read-only mode") with orange status indicators and instant mount button / path preview synchronizations.
-  - **Password Error Positioning**: Fixed error message placement for failed unlocks (wrong password / masterkey). The warning banner is now displayed directly beneath the password input and automatically clears when typing a new password.
-  - Moved the low-frequency "Name" (vault rename) input field to the very bottom of the card details, keeping high-frequency mount controls prominent.
-
-### v1.3.6 (2026-09-19) — UI Polish & Localization Fixes
-- **UI & Interaction**:
-  - Moved the password input field, Mount button, and Read-Only checkbox to the very top of the expanded vault card for immediate keyboard focus and visual priority.
-  - Moved the low-frequency "Name" (vault rename) input field to the very bottom of the card details.
-  - Removed card-level keyboard focus highlight: eliminated distracting blue focus border overlays on vault tiles, restoring clean native dividers.
-- **Localization**:
-  - Fixed Caps Lock indicator bubble showing `"localized string not found"` by providing a full language fallback chain (`["zh-Hans", "zh-CN", "zh", "en"]`) and declaring `CFBundleLocalizations`.
-  - Added localized strings for static 4-character password length validation and Caps Lock indicator.
-- **Build & Quality**:
-  - Full notarized & stapled DMG release (`GocryptKit-1.3.6.dmg`), passing all unit tests and 108 end-to-end assertions.
-
-### v1.3.5 (2026-09-19) — Quality, Concurrency & Security Hardening
-- **Security Hardening**:
-  - Added secondary confirmation warning dialog when creating a vault with a weak password (<8 characters or weak strength), preventing accidental weak passphrases while keeping policy flexible.
-  - Extended `OrphanReaper` to perform deep sweeping of temporary read-only session credentials (`mountctx:`) on app startup and termination.
-  - Eliminated redundant facades (`KeychainHelper` and `KeychainReader`) to standardize directly on `VaultCore.KeychainStore`.
-- **Concurrency & Reliability**:
-  - Implemented async stream draining for child process stderr in `ProcessRunner` using Swift 6 thread-safe `LockedBuffer`, completely eliminating OS pipe deadlocks on outputs exceeding 64 KiB.
-  - Consolidated duplicate timeout process runner logic from `MountManager` into `ProcessRunner`.
-  - Enforced strict `@MainActor` thread safety for `MountManager.extensionStatus` and added thread-safe helper inspection to eliminate race conditions between background polling and UI rendering.
-- **UI/UX & Localization**:
-  - Clarified read-only mount options between persistent default configuration and temporary session-only mounts.
-  - Added automatic recursive directory creation when specifying non-existent paths during vault initialization.
-  - Fully localized macOS system menus (Edit, Window, Undo/Redo, Cut/Copy/Paste, Select All) in both English and Simplified Chinese.
-  - Added keyboard focus (`.focusable()`) and Space key toggle for vault cards.
-- **Verification**: 104 unit test assertions and 108 end-to-end integration test assertions passing with Apple Developer ID notarization and stapling.
-
-### v1.3.4 — Dynamic Localization & Read-Only Regression
-- Fixed cold-start language switching inconsistency by synchronizing `AppleLanguages` with app preferences.
-- Added comprehensive E2E test assertions verifying read-only volume CRUD kernel-level blocking.
-
-### v1.3.0 – v1.3.3 — Read-Only Finder Integration & Build Automation
-- Ensured consistent `_READ_ONLY` volume naming in Finder sidebar and window titles via shared `MountContextStore` keychain intent.
-- Added robust comma-separated task options parsing (`ro`, `rdonly`, `volname`) in FSKit volume loader.
-- Automated release pipeline optimizations with notary submission retries and `create-dmg` headless fallback.
-
-### v1.2.5 — Defense-in-Depth & Unmount Safety
-- Added defensive `umount -f` force-unmount fallback on app termination to prevent lingering mountpoints.
-- Added direct GitHub repository and documentation links to the standard About panel.
-
-### v1.2.4 — Official Open-Source Release
-- First public open-source release on GitHub ([maxing-labs/GocryptKit](https://github.com/maxing-labs/GocryptKit)) under GPL-3.0 with Apple App Store Exception.
-- MenuBar companion enhancements: unmount debounce, mutual exclusion locks, and aggregated conflict dialog when multiple volumes encounter `EBUSY`.
-- Flexible password policy: replaced hard blocking on short passwords with advisory warning badges.
-- Translated all codebase technical comments to English.
-
-### v1.2.0 — Architecture Decoupling & Review
-- Refactored core modules to address code review findings and strengthen separation of concerns.
-
-### v1.1.2 — Media Seek Stabilization & App Interception
-- Fixed `EIO` (Input/output error) on large video file random seek and Python `pread` via Chunked Read Loop in Go C-API.
-- Decoupled read and write file handles with independent reference counting and granular locks.
-- Added app termination interception with safety prompts when active mounts exist.
-- Fixed focus-stealing bug on unmount.
-
-### v1.1.0 — Hardened Credential Protocol & App Refactoring
-- Standardized on TLV-tagged credential protocol (Magic: `VCP1`) with strict length checks and trailing garbage rejection.
-- Decomposed monolithic app views into `ContentView`, `VaultRowView`, `VaultRowViewModel`, and `MountManager`.
-- Expanded unit test suite to 90 tests.
-
-### v1.0.1 — MenuBar Integration & Auto-Focus
-- Introduced MenuBar status item with dynamic lock state icons (`lock.open.fill` / `lock.fill`).
-- Added automatic focus on password field upon vault row expansion.
-- Completed stress testing on large video and binary payloads.
-
-### v1.0.0 — Project Rebranding & Initial Milestone
-- Project officially renamed from `GocryptfsKit` to `GocryptKit`.
-- Packaged official notarized macOS DMG distribution.
-- Completed comprehensive security audits, architecture documentation (`AGENTS.md`), and clean export tooling.
-
-### v0.2.3 — Deep Security Hardening
-- Introduced TLV-tagged Keychain protocol to prevent type confusion between passwords and scrypt hashes.
-- Enforced consume-on-mount credential lifecycle (`deleteCredential`).
-- Implemented pure-logic `OrphanReaper` algorithm for cleaning up stale credentials.
-- Explicit in-memory secret scrubbing via `memset_s`.
-- Removed plaintext `--password` CLI argument in favor of masked terminal input and `--password-stdin`.
-- Enforced POSIX `0600` permissions on registry files.
-
-### v0.2.2 — Internationalization & UI Enhancements
-- Added English and Simplified Chinese localization.
-- Added password visibility toggle.
-- Explored iOS/iPadOS client architecture prototype.
-
-### v0.2.1 — Resilience & Extension State Fixes
-- Decoupled release smoke-tests from live extension state.
-- Resolved FSKit probing issues while volumes were mounted.
-
-### v0.2.0 — Multi-Vault Management & App Branding
-- Multi-vault list UI in SwiftUI.
-- Dedicated App Icon design (folder-key glyph).
-- Improved FSKit module status detection via `pluginkit`.
-
-### v0.1.0 — Initial Public Milestone
-- First distributable notarized DMG release.
-- Native FSKit read-write gocryptfs volume, host app, and CLI (`init`, `mount`, `umount`, `status`).
-- Developer ID release pipeline with inside-out code signing and initial 87-assertion E2E test suite.
-
-### Pre-Release Milestones (M0 – M2.5)
-- **M2.5**: Hardened credential channel between host and FSKit extension; interactive masked CLI input and `--password-stdin` pipeline; initial bilingual localization.
-- **M2**: Full read-write filesystem mutations; native macOS extended attributes (`xattr`) encrypted via EME + DirIV (AES-GCM); `.fseventsd/no_log` suppression.
-- **M1.5**: Reproducible Developer ID code signing pipeline; initial Apple Notarization (`notarytool`) and stapling automation; authoring of the end-to-end integration test suite over real media files (PDF, MP3, MP4, text).
-- **M1**: Read-only FSKit volume implementation; successfully mounting and decrypting gocryptfs vaults into Finder without drivers or kernel extensions.
-- **M0.5**: FSKit registration, lifecycle, and filesystem module (`FSFileSystem`) integration spike.
-- **M0**: Core engine build (`libgocryptfs` darwin/arm64 c-archive packaged into `libgocryptfs.xcframework`), `VaultCore` Swift package foundation, and `vaultctl` test CLI.
 
 ---
 
@@ -185,16 +113,29 @@ See [Getting Started](#getting-started) below for setup instructions.
 
 ### Installation & First Launch
 
-1. Drag `GocryptKit.app` to `/Applications`.
-2. Launch `GocryptKit.app` once.
+1. Download and drag `GocryptKit.app` to `/Applications`.
+2. Launch `GocryptKit.app` once. Gatekeeper blocks the first launch because the build is not notarized (see [Download & Releases](#download--releases)): **right-click the app → Open**, or click **Open Anyway** under **System Settings → Privacy & Security**.
 3. Enable the File System Extension:  
    **System Settings → General → Login Items & Extensions → Scroll to bottom → File System Extensions → Toggle GocryptKit ON**.
-4. In the app, click **"Add Existing Vault…"** to select a cipher directory, or **"Create New Vault…"** to initialize an empty directory.
+
+<p align="center">
+  <img src="Art/screenshots/extension-enable.gif" width="560" alt="Enable File System Extension in macOS System Settings">
+</p>
+
+<p align="center">
+  <img src="Art/screenshots/extension-enable-step1.png" width="48%" alt="System Settings Login Items & Extensions">
+  &nbsp;
+  <img src="Art/screenshots/extension-enable-step2.png" width="48%" alt="File System Extensions Enablement">
+</p>
+
+4. In the app:
+   - Click **"Add Existing Vault…"** to mount an existing gocryptfs directory (e.g. from Linux or cloud sync).
+   - Click **"Create New Vault…"** to initialize a new encrypted directory.
 5. Enter your password and click **"Mount"**. The decrypted filesystem is instantly accessible in Finder!
 
 ### Command-Line Interface (CLI)
 
-The application bundle contains a full-featured CLI interface:
+The application bundle contains a full-featured CLI interface for headless environments or automated scripting:
 
 ```bash
 # Initialize a new encrypted vault interactively (secure masked input)
@@ -206,8 +147,9 @@ echo "your-password" | /Applications/GocryptKit.app/Contents/MacOS/GocryptKit in
 # Mount an encrypted vault
 /Applications/GocryptKit.app/Contents/MacOS/GocryptKit mount <cipher-dir> <mountpoint>
 
-# Unmount a vault
+# Unmount a vault (supports -f / --force)
 /Applications/GocryptKit.app/Contents/MacOS/GocryptKit umount <mountpoint>
+/Applications/GocryptKit.app/Contents/MacOS/GocryptKit umount -f <mountpoint>
 
 # Check FSKit extension status
 /Applications/GocryptKit.app/Contents/MacOS/GocryptKit status
@@ -217,7 +159,25 @@ echo "your-password" | /Applications/GocryptKit.app/Contents/MacOS/GocryptKit in
 
 ---
 
-## Prerequisites & Building from Source
+## What's New in v1.4.2
+
+v1.4.2 is the first public release since v1.3.8 and ships six versions (v1.3.9 – v1.4.2) of security and data-integrity work:
+
+- **Data integrity**: a file removed or replaced by a rename while still open keeps its handles. Writes no longer bring a deleted file back or land in the file that took over its name (which could leave that file unreadable after a remount). Two racing `O_EXCL` creates can no longer both succeed. File IDs and content locks are shared across handles of the same file.
+- **Vault key protection**: on `-plaintextnames` vaults, `gocryptfs.conf` can no longer be deleted, replaced by a rename or edited through the mounted volume.
+- **Upstream xattr interoperability**: extended attribute names are encrypted with upstream gocryptfs's fixed IV, so `gocryptfs -fsck` and Linux gocryptfs read them. Attributes written by v1.3.9 or earlier stay readable and are converted the next time they are written.
+- **Tampered vault folders**: oversized planted extended attributes, abusive scrypt parameters, planted FIFOs, a `gocryptfs.conf` that is a symlink into a mounted vault and vaults nested inside a mounted vault are refused before they can crash or hang the file system extension.
+- **Accurate error codes**: the mounted volume reports the error it actually ran into (`EACCES`, `ENOENT`, `ENOSPC`, `ENOTEMPTY`, …) instead of a generic I/O error, so backup and sync tools react correctly.
+- **File attributes**: modification, access and creation times and flags take effect; the append-only flag is refused instead of leaving a file unwritable; read-only new files stay writable to the program that created them; copying a mode 0444 file no longer fails.
+- **CLI and keychain hygiene**: unknown options are errors, `--password=…` never echoes the value, an interrupted mount removes its credential, the default mount root `~/Volumes` is private (0700).
+- **Text fields**: system text replacement and inline predictions are off in all text fields, so "show password" cannot create a vault with a password you did not type.
+- **Quitting**: the app only quits when none of your volumes is mounted and offers to force an unmount only when that lets it quit.
+
+👉 **For the complete per-version log (v0.1.0 to v1.4.2), see [CHANGELOG.md](CHANGELOG.md).**
+
+---
+
+## Building from Source
 
 ### System Requirements
 
@@ -228,8 +188,8 @@ echo "your-password" | /Applications/GocryptKit.app/Contents/MacOS/GocryptKit in
 ### Build Steps
 
 ```bash
-git clone https://github.com/maxing-labs/gocryptfs-kit.git
-cd gocryptfs-kit
+git clone https://github.com/maxing-labs/GocryptKit.git
+cd GocryptKit
 
 # 1. Build the Go core engine (darwin arm64 c-archive)
 Engine/build-darwin.sh
@@ -250,35 +210,34 @@ xcodebuild -project GocryptKit.xcodeproj -scheme GocryptKit \
 
 ### Building DMG Package
 
-To produce an installation DMG:
-
 ```bash
 Scripts/build-dmg.sh
 ```
 
-Output: `build/dist/GocryptKit-1.3.7.dmg`.
+Output package will be generated at `build/dist/GocryptKit-1.4.2.dmg`.
 
 ---
 
 ## Testing
 
 ```bash
-# Run VaultCore unit test suite (104 assertions covering crypto, TLV payloads, xattrs, OrphanReaper)
-swift test --package-path Packages/VaultCore
+# Every layer that needs no mount: Go engine (go vet + go test -race), VaultCore (156 tests),
+# extension callbacks (45 tests; --tsan repeats them under Thread Sanitizer) and the host scripts.
+# Logs go to build/test-logs/<layer>.log.
+Scripts/test.sh fast [--tsan]
 
-# Run end-to-end integration test suite (108 tests, requires enabled AppEx)
+# End-to-end suite on a real mount (114 checks). Needs the app installed in /Applications with
+# its extension enabled, and refuses to start while any gocryptfs volume is mounted.
 Tests/e2e/make-samples.sh
-Tests/e2e/run-e2e.sh
+Scripts/test.sh mount
 ```
 
 ---
 
-## License
+## License & Attribution
 
 This project is licensed under the [GNU General Public License v3.0 (GPL-3.0)](LICENSE) with the **Apple App Store Exception (Version 1.0)**.
 
 The underlying engine `Engine/libgocryptfs` is derived from upstream [gocryptfs](https://github.com/rfjakob/gocryptfs) and is licensed under the MIT License.
-
-### Attribution
 
 The folder-key icon glyph is designed by [Flaticon](https://www.flaticon.com/free-icon/folder_10303679) (Icon ID: `10303679`) and used under the Flaticon Free License. See [`Art/ATTRIBUTION.md`](Art/ATTRIBUTION.md) for details.

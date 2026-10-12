@@ -246,6 +246,7 @@ struct VaultRowView: View {
                             HStack(spacing: 4) {
                                 if isShowingPassword {
                                     TextField(loc("Enter password (never stored anywhere)"), text: $password)
+                                        .autocorrectionDisabled()
                                         .focused($passwordFocused)
                                 } else {
                                     SecureField(loc("Enter password (never stored anywhere)"), text: $password)
@@ -531,6 +532,13 @@ struct VaultRowView: View {
             if let items = try? FileManager.default.contentsOfDirectory(atPath: path), !items.isEmpty {
                 return loc("Target directory exists and is not empty.")
             }
+        }
+        // The default root (~/Volumes) is made private at mount time; anywhere else
+        // it is the user's call, so say so when the location is open to other accounts.
+        let parent = URL(fileURLWithPath: path).deletingLastPathComponent()
+        if Vault.normalize(path: parent.path) != Vault.normalize(path: MountPointSecurity.defaultMountRoot.path),
+           MountPointSecurity.isReachableByOthers(parent) {
+            return loc("Other users of this Mac can reach this location. Mounted files are readable by anyone who can get there.")
         }
         return nil
     }

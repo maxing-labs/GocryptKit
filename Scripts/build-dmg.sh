@@ -23,14 +23,13 @@ echo "     libgocryptfs.xcframework ready"
 
 say "2/5  Generate Xcode project and build Release"
 xcodegen generate >/dev/null
+# A fixed derived-data path: "the first GocryptKit-* under ~/Library" may be a
+# stale build of another checkout.
+DERIVED="build/DerivedData"
 xcodebuild -project GocryptKit.xcodeproj -scheme GocryptKit \
-  -configuration Release build >/dev/null
+  -configuration Release -derivedDataPath "$DERIVED" build >/dev/null
 
-BUILT_APP="$(find ~/Library/Developer/Xcode/DerivedData/GocryptKit-*/Build/Products/Release/GocryptKit.app -maxdepth 0 2>/dev/null | head -n 1)"
-if [ -z "$BUILT_APP" ] || [ ! -d "$BUILT_APP" ]; then
-  # Fallback to local build products
-  BUILT_APP="$(find build -name "GocryptKit.app" -type d 2>/dev/null | head -n 1)"
-fi
+BUILT_APP="$DERIVED/Build/Products/Release/GocryptKit.app"
 
 if [ -z "$BUILT_APP" ] || [ ! -d "$BUILT_APP" ]; then
   echo "Error: Could not find built GocryptKit.app"

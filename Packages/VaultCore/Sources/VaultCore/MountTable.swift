@@ -21,12 +21,16 @@ public enum MountTable {
         public let mountPoint: String
         /// Whether the mount is read-only (MNT_RDONLY flag set in kernel statfs).
         public let isReadOnly: Bool
+        /// `f_owner`, the user who mounted the volume.
+        public let ownerUID: uid_t
 
-        public init(fileSystemType: String, source: String, mountPoint: String, isReadOnly: Bool = false) {
+        public init(fileSystemType: String, source: String, mountPoint: String, isReadOnly: Bool = false,
+                    ownerUID: uid_t = getuid()) {
             self.fileSystemType = fileSystemType
             self.source = source
             self.mountPoint = mountPoint
             self.isReadOnly = isReadOnly
+            self.ownerUID = ownerUID
         }
 
         /// Decodes `source` into a local path. FSKit writes ciphertext directories as percent-encoded
@@ -76,17 +80,59 @@ public enum MountTable {
             return Entry(fileSystemType: string(from: fs.f_fstypename),
                          source: string(from: fs.f_mntfromname),
                          mountPoint: mountPoint,
-                         isReadOnly: isRO)
+                         isReadOnly: isRO,
+                         ownerUID: fs.f_owner)
         }
     }
 
     /// Currently mounted gocryptfs volumes, keyed by the ciphertext directory's `Vault.canonicalKey`.
     public static func gocryptfsMounts() -> [String: Entry] {
+        gocryptfsMounts(in: entries(), ownedBy: nil)
+    }
+
+    /// gocryptfs volumes mounted by `uid` only. Anything that unmounts on the user's
+    /// behalf must use this: other accounts' volumes are not ours to take down.
+    public static func gocryptfsMounts(ownedBy uid: uid_t) -> [String: Entry] {
+        gocryptfsMounts(in: entries(), ownedBy: uid)
+    }
+
+    static func gocryptfsMounts(in entries: [Entry], ownedBy uid: uid_t?) -> [String: Entry] {
         var result: [String: Entry] = [:]
-        for entry in entries() where entry.fileSystemType == gocryptfsTypeName {
-            result[Vault.canonicalKey(path: entry.sourcePath)] = entry
+        for entry in entries where entry.fileSystemType == gocryptfsTypeName {
+            if let uid, entry.ownerUID != uid { continue }
+            result[cipherDirKey(of: entry)] = entry
         }
         return result
+    }
+
+    /// The ciphertext directory of a gocryptfs mount. FSKit writes "unknown" instead
+    /// of the file URL when that does not fit f_mntfromname (a long non-ASCII path);
+    /// the record the host keeps per mount point names the directory then. Without
+    /// one, the mount point keeps such volumes apart.
+    static func cipherDirKey(of entry: Entry) -> String {
+        if entry.source.hasPrefix("file://") {
+            return Vault.canonicalKey(path: entry.sourcePath)
+        }
+        return MountRecordStore.cipherDir(forMountOnName: entry.mountPoint) ?? entry.mountPoint
+    }
+
+    /// Mount point of the gocryptfs volume that holds `path`, if any. A vault inside
+    /// a mounted vault must not be mounted: the mount waits for its extension, which
+    /// waits to read the vault through the outer volume, and meanwhile statfs of every
+    /// FSKit volume (external disks too) hangs.
+    public static func gocryptfsVolume(containing path: String) -> String? {
+        var fs = StatFS()
+        guard statfs(path, &fs) == 0, string(from: fs.f_fstypename) == gocryptfsTypeName else { return nil }
+        return string(from: fs.f_mntonname)
+    }
+
+    /// Mount point of the gocryptfs volume a vault would be read through, if any:
+    /// the one holding its directory, or the one its gocryptfs.conf lies in. The
+    /// extension reads the conf following symlinks, so a conf linked into a
+    /// mounted vault deadlocks FSKit the same way.
+    public static func gocryptfsVolume(holdingVaultAt cipherDir: String,
+                                       volumeOf: (String) -> String? = gocryptfsVolume(containing:)) -> String? {
+        volumeOf(cipherDir) ?? volumeOf((cipherDir as NSString).appendingPathComponent("gocryptfs.conf"))
     }
 
     /// Rebinds fixed-size C char tuple arrays from `statfs` to a Swift String,

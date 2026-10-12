@@ -5,9 +5,16 @@ final class VaultCredentialPayloadTests: XCTestCase {
 
     // MARK: - Serialization round-trip
 
+    /// I-9: the length field is 16 bits. A longer value must be refused, not trap.
+    func testOverlongPasswordIsRefused() throws {
+        let longest = String(repeating: "a", count: Int(UInt16.max))
+        XCTAssertNotNil(VaultCredentialPayload.deserialize(from: try VaultCredentialPayload.password(longest).serialize()))
+        XCTAssertThrowsError(try VaultCredentialPayload.password(longest + "a").serialize())
+    }
+
     func testPasswordRoundTrip() throws {
         let original = VaultCredentialPayload.password("hunter2")
-        let data = original.serialize()
+        let data = try original.serialize()
         let restored = try XCTUnwrap(VaultCredentialPayload.deserialize(from: data))
         XCTAssertEqual(data[0], 0x56) // 'V'
         XCTAssertEqual(data[1], 0x43) // 'C'
@@ -26,7 +33,7 @@ final class VaultCredentialPayloadTests: XCTestCase {
     func testScryptHashRoundTrip() throws {
         let hash = Data(repeating: 0xAB, count: 32)
         let original = VaultCredentialPayload.scryptHash(hash)
-        let data = original.serialize()
+        let data = try original.serialize()
         let restored = try XCTUnwrap(VaultCredentialPayload.deserialize(from: data))
         XCTAssertEqual(data[0...3], Data([0x56, 0x43, 0x50, 0x31]))
         XCTAssertEqual(data[4], 0x02) // tag: scryptHash
@@ -41,7 +48,7 @@ final class VaultCredentialPayloadTests: XCTestCase {
 
     func testEmptyPasswordRoundTrip() throws {
         let original = VaultCredentialPayload.password("")
-        let data = original.serialize()
+        let data = try original.serialize()
         let restored = try XCTUnwrap(VaultCredentialPayload.deserialize(from: data))
         let len = (UInt16(data[5]) << 8) | UInt16(data[6])
         XCTAssertEqual(len, 0)
@@ -54,7 +61,7 @@ final class VaultCredentialPayloadTests: XCTestCase {
 
     func testUnicodePasswordRoundTrip() throws {
         let original = VaultCredentialPayload.password("密码🔐")
-        let data = original.serialize()
+        let data = try original.serialize()
         let restored = try XCTUnwrap(VaultCredentialPayload.deserialize(from: data))
         if case .password(let pwd) = restored {
             XCTAssertEqual(pwd, "密码🔐")
@@ -78,7 +85,7 @@ final class VaultCredentialPayloadTests: XCTestCase {
 
         // With the tagged protocol, it's correctly identified as scryptHash
         let payload = VaultCredentialPayload.scryptHash(sneakyHash)
-        let data = payload.serialize()
+        let data = try payload.serialize()
         let restored = try XCTUnwrap(VaultCredentialPayload.deserialize(from: data))
         if case .scryptHash(let h) = restored {
             XCTAssertEqual(h, sneakyHash)

@@ -2,20 +2,19 @@ package main
 
 import (
 	"C"
-	"syscall"
 	"golang.org/x/sys/unix"
+	"syscall"
 
 	"libgocryptfs/v2/internal/nametransform"
 	"libgocryptfs/v2/internal/syscallcompat"
 )
 
-//export gcf_get_attrs
 func gcf_get_attrs(sessionID int, relPath string) (uint32, uint64, uint64, bool) {
-	value, ok := OpenedVolumes.Load(sessionID)
-	if !ok {
+	volume := acquireVolume(sessionID)
+	if volume == nil {
 		return 0, 0, 0, false
 	}
-	volume := value.(*Volume)
+	defer volume.release()
 	dirfd, cName, err := volume.prepareAtSyscall(relPath)
 	if err != nil {
 		return 0, 0, 0, false
@@ -34,28 +33,24 @@ func gcf_get_attrs(sessionID int, relPath string) (uint32, uint64, uint64, bool)
 }
 
 // libgocryptfs: using Renameat instead of Renameat2 to support older kernels
-//export gcf_rename
-func gcf_rename(sessionID int, oldPath string, newPath string) bool {
-	value, ok := OpenedVolumes.Load(sessionID)
-	if !ok {
-		return false
-	}
-	volume := value.(*Volume)
+func (volume *Volume) rename(oldPath string, newPath string) error {
+	// Renaming a parent invalidates every cached descendant directory fd.
+	defer volume.dirCache.Clear()
 	dirfd, cName, err := volume.prepareAtSyscall(oldPath)
 	if err != nil {
-		return false
+		return err
 	}
 	defer syscall.Close(dirfd)
 
 	dirfd2, cName2, err := volume.prepareAtSyscall(newPath)
 	if err != nil {
-		return false
+		return err
 	}
 	defer syscall.Close(dirfd2)
 
 	// Easy case.
 	if volume.plainTextNames {
-		return errToBool(syscallcompat.Renameat(dirfd, cName, dirfd2, cName2))
+		return syscallcompat.Renameat(dirfd, cName, dirfd2, cName2)
 	}
 	// Long destination file name: create .name file
 	nameFileAlreadyThere := false
@@ -67,7 +62,7 @@ func gcf_rename(sessionID int, oldPath string, newPath string) bool {
 		if err == syscall.EEXIST {
 			nameFileAlreadyThere = true
 		} else if err != nil {
-			return false
+			return err
 		}
 	}
 	// Actual rename
@@ -78,7 +73,7 @@ func gcf_rename(sessionID int, oldPath string, newPath string) bool {
 		// Interestingly, ext4 returns ENOTEMPTY while xfs returns EEXIST.
 		// We handle that by trying to fs.Rmdir() the target directory and trying
 		// again.
-		if gcf_rmdir(sessionID, newPath) {
+		if volume.rmdir(newPath) == nil {
 			err = syscallcompat.Renameat(dirfd, cName, dirfd2, cName2)
 		}
 	}
@@ -87,10 +82,19 @@ func gcf_rename(sessionID int, oldPath string, newPath string) bool {
 			// Roll back .name creation unless the .name file was already there
 			nametransform.DeleteLongNameAt(dirfd2, cName2)
 		}
-		return false
+		return err
 	}
 	if nametransform.IsLongContent(cName) {
 		nametransform.DeleteLongNameAt(dirfd, cName)
 	}
-	return true
+	return nil
+}
+
+func gcf_rename(sessionID int, oldPath string, newPath string) bool {
+	volume := acquireVolume(sessionID)
+	if volume == nil {
+		return false
+	}
+	defer volume.release()
+	return errToBool(volume.rename(oldPath, newPath))
 }

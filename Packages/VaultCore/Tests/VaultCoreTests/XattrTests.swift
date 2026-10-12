@@ -58,7 +58,7 @@ final class XattrTests: XCTestCase {
 
         let tooBig = Data(repeating: 0xAB, count: GocryptfsEngine.maximumXattrValueSize + 1)
         XCTAssertThrowsError(try engine.setXattr("file.txt", named: "big2", to: tooBig)) {
-            XCTAssertEqual($0 as? VaultError, .ioError(E2BIG))
+            XCTAssertEqual($0 as? VaultError, .posix(E2BIG))
         }
     }
 
@@ -122,7 +122,7 @@ final class XattrTests: XCTestCase {
         // Rejection is correct: silent truncation would cause two different attributes to overwrite each other.
         let longName = String(repeating: "a", count: 100)
         XCTAssertThrowsError(try engine.setXattr("file.txt", named: longName, to: Data([1]))) {
-            XCTAssertEqual($0 as? VaultError, .ioError(ENAMETOOLONG))
+            XCTAssertEqual($0 as? VaultError, .posix(ENAMETOOLONG))
         }
     }
 

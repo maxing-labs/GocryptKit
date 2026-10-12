@@ -1,6 +1,9 @@
 import Foundation
 import VaultCore
 
+/// Write end of the self-pipe the signal handler uses; see `removeCredentialOnInterrupt`.
+nonisolated(unsafe) private var interruptPipeWriteEnd: Int32 = -1
+
 enum CLIRouter {
     /// Read a password interactively from the terminal with echo disabled.
     /// Returns nil if stdin is not a terminal or the read fails.
@@ -9,16 +12,22 @@ enum CLIRouter {
             fputs("Error: stdin is not a terminal. Cannot read password interactively.\n", stderr)
             return nil
         }
-        var buf = [CChar](repeating: 0, count: 1024)
+        // One byte more than the limit, so an over-long entry is detected instead of truncated.
+        let capacity = StdinPassword.maximumBytes + 2
+        var buf = [CChar](repeating: 0, count: capacity)
         guard let result = readpassphrase(prompt, &buf, buf.count, RPP_REQUIRE_TTY) else {
             return nil
         }
         let password = String(cString: result)
         // Securely zero the buffer after reading
         memset_s(&buf, buf.count, 0, buf.count)
-        
+        guard password.utf8.count <= StdinPassword.maximumBytes else {
+            fputs("Error: \(StdinPassword.Failure.tooLong.localizedDescription)\n", stderr)
+            return nil
+        }
+
         if confirm {
-            var buf2 = [CChar](repeating: 0, count: 1024)
+            var buf2 = [CChar](repeating: 0, count: capacity)
             guard let result2 = readpassphrase("Confirm password: ", &buf2, buf2.count, RPP_REQUIRE_TTY) else {
                 return nil
             }
@@ -29,33 +38,78 @@ enum CLIRouter {
                 return nil
             }
         }
-        
+
         return password.isEmpty ? nil : password
     }
 
     /// Read a password from standard input (pipeline/script automation).
-    /// Strips trailing newlines to accommodate `echo` or `printf`.
-    /// Caps input at 4 KiB to prevent denial-of-service / OOM via unbounded streams.
-    private static func readPasswordStdin() -> String? {
-        let handle = FileHandle.standardInput
-        let maxPasswordBytes = 4096
-        let inputData = handle.readData(ofLength: maxPasswordBytes)
-        guard !inputData.isEmpty, let text = String(data: inputData, encoding: .utf8) else {
-            return nil
+    /// See `StdinPassword` for what is stripped and what is rejected.
+    private static func readPasswordStdin() throws -> String {
+        // On a terminal the line discipline would echo the password as it is typed.
+        guard isatty(STDIN_FILENO) == 0 else {
+            throw StdinPassword.Failure.terminal
         }
-        let trimmed = text.trimmingCharacters(in: .newlines)
-        return trimmed.isEmpty ? nil : trimmed
+        return try StdinPassword.parse(FileHandle.standardInput.readData(ofLength: StdinPassword.readLimit))
+    }
+
+    private static func obtainPassword(fromStdin: Bool, prompt: String, confirm: Bool) -> String {
+        if fromStdin {
+            do {
+                return try readPasswordStdin()
+            } catch {
+                fputs("Failed to read password from stdin: \(error.localizedDescription)\n", stderr)
+                exit(1)
+            }
+        }
+        guard let password = readPassword(prompt: prompt, confirm: confirm), !password.isEmpty else {
+            fputs("Failed to read password. Make sure you are running in a terminal.\n", stderr)
+            exit(1)
+        }
+        return password
+    }
+
+    /// A mount holds the vault credential in the Keychain until the extension
+    /// consumes it. If the user interrupts the mount in that window (Ctrl-C),
+    /// remove the credential instead of leaving it behind.
+    ///
+    /// Handlers rather than SIG_IGN: handlers reset to the default across exec, so
+    /// `/sbin/mount` still dies from the terminal's Ctrl-C. The handler itself only
+    /// writes to a pipe (async-signal-safe); a thread does the Keychain work.
+    private static func removeCredentialOnInterrupt(cipherPath: String) {
+        var fds: [Int32] = [0, 0]
+        guard pipe(&fds) == 0 else { return }
+        interruptPipeWriteEnd = fds[1]
+        let readEnd = fds[0]
+        let account = Vault.canonicalKey(path: cipherPath)
+        Thread.detachNewThread {
+            var caught: UInt8 = 0
+            guard read(readEnd, &caught, 1) == 1 else { return }
+            ProcessRunner.terminateActiveChild()
+            _ = KeychainStore.deleteCredential(account: account)
+            _ = MountContextStore.delete(for: cipherPath)
+            fputs("\nInterrupted. The stored credential was removed.\n", stderr)
+            exit(128 + Int32(caught))
+        }
+        for sig in [SIGINT, SIGTERM, SIGHUP] {
+            signal(sig) { caught in
+                var byte = UInt8(truncatingIfNeeded: caught)
+                _ = write(interruptPipeWriteEnd, &byte, 1)
+            }
+        }
     }
 
     static func runCLI(arguments: [String]) {
-        let command = arguments[0]
+        let command: CLICommand
+        do {
+            command = try CLIArguments.parse(arguments)
+        } catch {
+            fputs("Error: \(error.localizedDescription)\n", stderr)
+            exit(1)
+        }
+
         switch command {
-        case "init":
-            guard arguments.count >= 2 else {
-                print("Usage: GocryptKit init <cipherDir> [--scryptn <logN>] [--password-stdin]")
-                exit(1)
-            }
-            let cipherPath = (arguments[1] as NSString).expandingTildeInPath
+        case .initVault(let rawCipherDir, let requestedLogN, let passwordFromStdin):
+            let cipherPath = (rawCipherDir as NSString).expandingTildeInPath
             var isDirInit: ObjCBool = false
             if FileManager.default.fileExists(atPath: cipherPath, isDirectory: &isDirInit) {
                 guard isDirInit.boolValue else {
@@ -70,44 +124,15 @@ enum CLIRouter {
                     exit(1)
                 }
             }
-            // Reject the insecure --password flag
-            if arguments.contains("--password") {
-                fputs("Error: --password has been removed for security reasons.\nPasswords are now entered interactively (no echo) or passed via --password-stdin.\n", stderr)
-                exit(1)
-            }
-            let password: String?
-            if arguments.contains("--password-stdin") {
-                password = readPasswordStdin()
-                if password == nil {
-                    fputs("Failed to read password from stdin.\n", stderr)
-                    exit(1)
-                }
-            } else {
-                password = readPassword(prompt: "New vault password: ", confirm: true)
-                if password == nil {
-                    fputs("Failed to read password. Make sure you are running in a terminal.\n", stderr)
-                    exit(1)
-                }
-            }
-            guard let validPassword = password, !validPassword.isEmpty else {
-                fputs("Password cannot be empty.\n", stderr)
-                exit(1)
-            }
+            let password = obtainPassword(fromStdin: passwordFromStdin, prompt: "New vault password: ", confirm: true)
             // --scryptn exists exclusively for testing (default logN=16 takes 1-2 seconds per derivation).
             // Lowering it weakens password security; do not pass it during normal operation.
-            var scryptLogN = GocryptfsEngine.defaultScryptLogN
-            if let raw = value(of: "--scryptn", in: arguments) {
-                guard let parsed = Int32(raw) else {
-                    fputs("--scryptn expects an integer.\n", stderr)
-                    exit(1)
-                }
-                scryptLogN = parsed
-            }
+            let scryptLogN = requestedLogN ?? GocryptfsEngine.defaultScryptLogN
 
             do {
                 _ = try GocryptfsEngine.createVault(
                     at: URL(fileURLWithPath: cipherPath),
-                    password: validPassword,
+                    password: password,
                     scryptLogN: scryptLogN
                 )
                 print("Created vault at \(cipherPath)")
@@ -118,66 +143,36 @@ enum CLIRouter {
                 exit(1)
             }
 
-        case "mount":
-            guard arguments.count >= 3 else {
-                print("Usage: GocryptKit mount <cipherDir> <mountPoint> [--readonly|-r] [--password-stdin]")
-                exit(1)
-            }
-            let cipherPath = (arguments[1] as NSString).expandingTildeInPath
-            let mountPath = (arguments[2] as NSString).expandingTildeInPath
+        case .mount(let rawCipherDir, let rawMountPoint, let readOnly, let passwordFromStdin):
+            let cipherPath = (rawCipherDir as NSString).expandingTildeInPath
+            let mountPath = (rawMountPoint as NSString).expandingTildeInPath
             var isDirMount: ObjCBool = false
             guard FileManager.default.fileExists(atPath: cipherPath, isDirectory: &isDirMount), isDirMount.boolValue else {
                 fputs("Error: cipher directory '\(cipherPath)' does not exist or is not a directory.\n", stderr)
                 exit(1)
             }
-            // Reject the insecure --password flag
-            if arguments.contains("--password") {
-                fputs("Error: --password has been removed for security reasons.\nPasswords are now entered interactively (no echo) or passed via --password-stdin.\n", stderr)
-                exit(1)
-            }
-            let password: String?
-            if arguments.contains("--password-stdin") {
-                password = readPasswordStdin()
-                if password == nil {
-                    fputs("Failed to read password from stdin.\n", stderr)
-                    exit(1)
-                }
-            } else {
-                password = readPassword(prompt: "Vault password: ")
-                if password == nil {
-                    fputs("Failed to read password. Make sure you are running in a terminal.\n", stderr)
-                    exit(1)
-                }
-            }
-            guard let validPassword = password, !validPassword.isEmpty else {
-                fputs("Password cannot be empty.\n", stderr)
-                exit(1)
-            }
+            let password = obtainPassword(fromStdin: passwordFromStdin, prompt: "Vault password: ", confirm: false)
 
-            let readOnly = arguments.contains("--readonly") || arguments.contains("-r") || arguments.contains("--ro")
-
+            removeCredentialOnInterrupt(cipherPath: cipherPath)
             do {
                 try MountManager.shared.mountVaultSync(
                     cipherDir: URL(fileURLWithPath: cipherPath),
                     mountPoint: URL(fileURLWithPath: mountPath),
-                    password: validPassword,
+                    password: password,
                     readOnly: readOnly
                 )
                 print("Successfully mounted \(cipherPath) on \(mountPath)\(readOnly ? " (read-only)" : "")")
+                if MountPointSecurity.isReachableByOthers(URL(fileURLWithPath: mountPath).deletingLastPathComponent()) {
+                    fputs("Warning: other users of this Mac can reach \(mountPath). Mounted files are readable by anyone who can get there.\n", stderr)
+                }
                 exit(0)
             } catch {
                 fputs("Mount error: \(error.localizedDescription)\n", stderr)
                 exit(1)
             }
 
-        case "umount":
-            let nonFlagArgs = arguments.dropFirst().filter { !$0.hasPrefix("-") }
-            guard let firstArg = nonFlagArgs.first else {
-                print("Usage: GocryptKit umount <mountPoint> [-f|--force]")
-                exit(1)
-            }
-            let force = arguments.contains("-f") || arguments.contains("--force")
-            let mountPath = (firstArg as NSString).expandingTildeInPath
+        case .unmount(let rawMountPoint, let force):
+            let mountPath = (rawMountPoint as NSString).expandingTildeInPath
             do {
                 try MountManager.shared.unmountVault(mountPoint: URL(fileURLWithPath: mountPath), force: force)
                 print("Successfully unmounted \(mountPath)")
@@ -187,7 +182,7 @@ enum CLIRouter {
                 exit(1)
             }
 
-        case "status":
+        case .status:
             MountManager.shared.checkExtensionStatus()
             // Note that "DISABLED" does not contain the substring "ENABLED", so e2e's `grep -q ENABLED`
             // still only matches when genuinely enabled. Review Tests/e2e/run-e2e.sh:122 before modifying these lines.
@@ -211,23 +206,11 @@ enum CLIRouter {
                 exit(4)
             }
 
-        case "version":
+        case .version:
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
             let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
             print("GocryptKit \(version) (build \(build))")
             exit(0)
-
-        default:
-            print("Unknown command: \(command)")
-            print("Available commands: init, mount, umount, status, version")
-            exit(1)
         }
-    }
-
-    private static func value(of flag: String, in arguments: [String]) -> String? {
-        guard let index = arguments.firstIndex(of: flag), index + 1 < arguments.count else {
-            return nil
-        }
-        return arguments[index + 1]
     }
 }

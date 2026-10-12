@@ -1,5 +1,10 @@
 import Foundation
 
+public enum VaultCredentialPayloadError: Error, Equatable {
+    /// The value does not fit the 16-bit length field.
+    case valueTooLong(Int)
+}
+
 public enum VaultCredentialPayload {
     case password(String)
     case scryptHash(Data)
@@ -7,25 +12,20 @@ public enum VaultCredentialPayload {
     // Protocol format: [Magic 4B: "VCP1"][Tag 1B][Length 2B (BE)][Value NB]
     private static let magic: [UInt8] = [0x56, 0x43, 0x50, 0x31] // "VCP1"
     
-    public func serialize() -> Data {
+    public func serialize() throws -> Data {
+        let (tag, value): (UInt8, Data) = switch self {
+        case .password(let pwd): (0x01, Data(pwd.utf8))
+        case .scryptHash(let hash): (0x02, hash)
+        }
+        guard let length = UInt16(exactly: value.count) else {
+            throw VaultCredentialPayloadError.valueTooLong(value.count)
+        }
         var data = Data()
         data.append(contentsOf: Self.magic)
-        
-        switch self {
-        case .password(let pwd):
-            data.append(0x01)
-            let pwdData = Data(pwd.utf8)
-            let length = UInt16(pwdData.count)
-            data.append(UInt8((length >> 8) & 0xFF))
-            data.append(UInt8(length & 0xFF))
-            data.append(pwdData)
-        case .scryptHash(let hash):
-            data.append(0x02)
-            let length = UInt16(hash.count)
-            data.append(UInt8((length >> 8) & 0xFF))
-            data.append(UInt8(length & 0xFF))
-            data.append(hash)
-        }
+        data.append(tag)
+        data.append(UInt8((length >> 8) & 0xFF))
+        data.append(UInt8(length & 0xFF))
+        data.append(value)
         return data
     }
     

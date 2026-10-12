@@ -17,15 +17,17 @@ func getParentPath(path string) string {
 	return parent
 }
 
-// isFiltered - check if plaintext "path" should be forbidden
+// isFiltered - check if the plaintext name "child" in directory "parentPath"
+// should be forbidden
 //
 // Prevents name clashes with internal files when file names are not encrypted
-func (volume *Volume) isFiltered(path string) bool {
+func (volume *Volume) isFiltered(parentPath string, child string) bool {
 	if !volume.plainTextNames {
 		return false
 	}
-	// gocryptfs.conf in the root directory is forbidden
-	if path == configfile.ConfDefaultName {
+	// gocryptfs.conf in the root directory is forbidden. parentPath is
+	// filepath.Dir of a rooted path, so every spelling of the root is "/".
+	if parentPath == "/" && child == configfile.ConfDefaultName {
 		return true
 	}
 	// Note: gocryptfs.diriv is NOT forbidden because diriv and plaintextnames
@@ -41,10 +43,6 @@ func (volume *Volume) prepareAtSyscall(path string) (dirfd int, cName string, er
 		path = "/" + path
 	}
 
-	if volume.isFiltered(path) {
-		return -1, "", nil
-	}
-
 	var encryptName func(int, string, []byte) (string, error)
 	if !volume.plainTextNames {
 		encryptName = func(dirfd int, child string, iv []byte) (cName string, err error) {
@@ -58,6 +56,15 @@ func (volume *Volume) prepareAtSyscall(path string) (dirfd int, cName string, er
 
 	child := filepath.Base(path)
 	parentPath := getParentPath(path)
+	// filepath.Dir cleans the parent, so only the last component can still be
+	// "." or "..". With plaintextnames it would go to the *at call as is, and
+	// ".." in the root names the directory above the cipher directory.
+	if child == "." || child == ".." {
+		return -1, "", syscall.EPERM
+	}
+	if volume.isFiltered(parentPath, child) {
+		return -1, "", syscall.EPERM
+	}
 
 	// Cache lookup
 	var iv []byte
@@ -149,21 +156,22 @@ func (volume *Volume) decryptSymlinkTarget(cData64 string) (string, error) {
 	return string(data), nil
 }
 
-// readlink reads and decrypts a symlink. Used by Readlink, Getattr, Lookup.
-func (volume *Volume) readlink(dirfd int, cName string) []byte {
+// readlink reads and decrypts a symlink. Used by gcfc_readlink and
+// translateSize. A target that does not decrypt is EIO.
+func (volume *Volume) readlink(dirfd int, cName string) ([]byte, error) {
 	cTarget, err := syscallcompat.Readlinkat(dirfd, cName)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	if volume.plainTextNames {
-		return []byte(cTarget)
+		return []byte(cTarget), nil
 	}
 	// Symlinks are encrypted like file contents (GCM) and base64-encoded
 	target, err := volume.decryptSymlinkTarget(cTarget)
 	if err != nil {
-		return nil
+		return nil, syscall.EIO
 	}
-	return []byte(target)
+	return []byte(target), nil
 }
 
 func isRegular(mode uint32) bool { return (mode & syscall.S_IFMT) == syscall.S_IFREG }
@@ -179,7 +187,7 @@ func (volume *Volume) translateSize(dirfd int, cName string, st *syscall.Stat_t)
 		size = volume.contentEnc.CipherSizeToPlainSize(uint64(st.Size))
 	} else if isSymlink(uint32(st.Mode)) {
 		// read and decrypt target
-		target := volume.readlink(dirfd, cName)
+		target, _ := volume.readlink(dirfd, cName)
 		size = uint64(len(target))
 	}
 	return size

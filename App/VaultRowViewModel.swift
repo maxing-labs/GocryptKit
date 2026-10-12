@@ -148,6 +148,10 @@ final class VaultRowViewModel: @unchecked Sendable {
                 return loc("Authentication failed: invalid password or masterkey.")
             case .mountPointNotEmpty:
                 return loc("Target mount directory is not empty.")
+            case .alreadyMounted(let mountPoint):
+                return loc("This vault is already mounted at \(mountPoint).")
+            case .insideMountedVault(let mountPoint):
+                return loc("This vault lies inside the mounted vault at \(mountPoint). Move it out of there to mount it.")
             case .generic(let code, let message):
                 let useful = message
                     .split(separator: "\n")

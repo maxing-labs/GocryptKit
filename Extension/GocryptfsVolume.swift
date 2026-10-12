@@ -22,7 +22,8 @@ final class GocryptfsVolume: FSVolume,
 
     let cacheLock = NSLock()
     var pathCache: [String: GocryptfsItem] = [:]
-    var inodeCache: [UInt64: GocryptfsItem] = [:]
+    /// Key of a name in directory listings. Tests replace it to force collisions.
+    var listingKey: (String) -> UInt64 = GocryptfsVolume.listingKey(for:)
 
     init(engine: GocryptfsEngine, cipherURL: URL, volumeName: String? = nil, isReadOnly: Bool = false) throws {
         self.engine = engine
@@ -44,7 +45,6 @@ final class GocryptfsVolume: FSVolume,
         )
         self.rootItem = root
         self.pathCache[""] = root
-        self.inodeCache[rootStat.st_ino] = root
 
         let nameString: String
         if let custom = volumeName, !custom.isEmpty {
@@ -56,7 +56,7 @@ final class GocryptfsVolume: FSVolume,
         let volName = FSFileName(string: nameString)
         super.init(volumeID: FSVolume.Identifier(uuid: UUID()), volumeName: volName)
         self.name = volName
-        logger.info("Initialized GocryptfsVolume '\(nameString, privacy: .public)' for \(cipherURL.path, privacy: .private) (readOnly: \(isReadOnly))")
+        logger.info("Initialized GocryptfsVolume '\(nameString, privacy: .private)' for \(cipherURL.path, privacy: .private) (readOnly: \(isReadOnly))")
     }
 
     @available(macOS 26.4, *)
@@ -119,14 +119,15 @@ final class GocryptfsVolume: FSVolume,
             item.forceClose(using: engine)
         }
         pathCache.removeAll()
-        inodeCache.removeAll()
         cacheLock.unlock()
         engine.shutdown()
         replyHandler()
     }
 
     public func synchronize(flags: FSSyncFlags, replyHandler: @escaping (Error?) -> Void) {
-        // Read-only filesystem has no dirty data
+        // Nothing is buffered here: every write() is encrypted and handed to the
+        // backing file system with pwrite(2) before its reply. Durability beyond
+        // that is the backing file system's; no fsync is issued on its files.
         replyHandler(nil)
     }
 
@@ -135,7 +136,7 @@ final class GocryptfsVolume: FSVolume,
             return replyHandler(nil, POSIXError(.EROFS))
         }
         self.name = name
-        logger.info("Updated volumeName to '\(name.string ?? "", privacy: .public)'")
+        logger.info("Updated volumeName to '\(name.string ?? "", privacy: .private)'")
         replyHandler(name, nil)
     }
 
@@ -144,9 +145,13 @@ final class GocryptfsVolume: FSVolume,
             return replyHandler(POSIXError(.EINVAL))
         }
 
+        // Only drop the cache entry if it still points at this very item. After
+        // a remove or replace its path may belong to a newer item that must stay
+        // cached.
         cacheLock.lock()
-        pathCache.removeValue(forKey: gcItem.plainPath)
-        inodeCache.removeValue(forKey: gcItem.inode)
+        if pathCache[gcItem.plainPath] === gcItem {
+            pathCache.removeValue(forKey: gcItem.plainPath)
+        }
         cacheLock.unlock()
 
         gcItem.forceClose(using: engine)
@@ -176,38 +181,27 @@ final class GocryptfsVolume: FSVolume,
         }
         cacheLock.unlock()
 
-        guard let cipherPath = engine.cipherPath(childPlain) else {
-            return replyHandler(nil, nil, POSIXError(.ENOENT))
+        let st: ItemStat
+        do {
+            st = try engine.stat(childPlain)
+        } catch {
+            return replyHandler(nil, nil, Self.posixError(for: error, default: .ENOENT))
         }
 
-        var st = stat()
-        if lstat(cipherPath, &st) != 0 {
-            return replyHandler(nil, nil, POSIXError(POSIXError.Code(rawValue: errno) ?? .ENOENT))
-        }
+        let type: FSItem.ItemType = st.isDirectory ? .directory : (st.isSymlink ? .symlink : .file)
 
-        let type: FSItem.ItemType
-        switch st.st_mode & S_IFMT {
-        case S_IFDIR:
-            type = .directory
-        case S_IFLNK:
-            type = .symlink
-        default:
-            type = .file
-        }
-
-        let itemID = FSItem.Identifier(rawValue: st.st_ino) ?? .invalid
+        let itemID = FSItem.Identifier(rawValue: st.inode) ?? .invalid
         let newItem = GocryptfsItem(
             id: itemID,
             plainPath: childPlain,
             name: nameString,
             itemType: type,
-            inode: st.st_ino,
+            inode: st.inode,
             parent: dirItem
         )
 
         cacheLock.lock()
         pathCache[childPlain] = newItem
-        inodeCache[st.st_ino] = newItem
         cacheLock.unlock()
 
         replyHandler(newItem, name, nil)
@@ -223,7 +217,7 @@ final class GocryptfsVolume: FSVolume,
             replyHandler(FSFileName(string: target), nil)
         } catch {
             logger.error("Failed to readlink for item \(gcItem.name, privacy: .private): \(error.localizedDescription, privacy: .private)")
-            replyHandler(nil, POSIXError(.EIO))
+            replyHandler(nil, Self.posixError(for: error))
         }
     }
 
@@ -237,18 +231,24 @@ final class GocryptfsVolume: FSVolume,
             return replyHandler(verifier, POSIXError(.ENOTDIR))
         }
 
-        let entries: [DirEntry]
+        // Every call lists the directory again, so a cookie must not be an
+        // index: an entry added or removed between two calls would shift the
+        // rest, and the listing would skip or repeat entries. Entries go in the
+        // order of a keyed hash of their name (see listingOrder), and a cookie
+        // means "continue at the first position not below this". Entries that
+        // stay are listed exactly once whatever changes around them.
+        let entries: [(position: UInt64, entry: DirEntry)]
         do {
-            entries = try engine.list(dirItem.plainPath).sorted(by: { $0.name < $1.name })
+            entries = Self.listingOrder(try engine.list(dirItem.plainPath), key: listingKey)
         } catch {
             logger.error("Failed to list directory: \(error.localizedDescription, privacy: .private)")
-            return replyHandler(verifier, POSIXError(.EIO))
+            return replyHandler(verifier, Self.posixError(for: error))
         }
 
-        var idx = Int(cookie.rawValue)
+        var idx = entries.firstIndex { $0.position >= cookie.rawValue } ?? entries.count
         while idx < entries.count {
-            let entry = entries[idx]
-            let nextCookie = FSDirectoryCookie(UInt64(idx + 1))
+            let (position, entry) = entries[idx]
+            let nextCookie = FSDirectoryCookie(position + 1)
             let childType: FSItem.ItemType = entry.isDirectory ? .directory : (entry.isSymlink ? .symlink : .file)
 
             let childPlain = dirItem.plainPath.isEmpty ? entry.name : "\(dirItem.plainPath)/\(entry.name)"
@@ -260,25 +260,29 @@ final class GocryptfsVolume: FSVolume,
             }
             cacheLock.unlock()
 
-            if childInode == 0, let cipherPath = engine.cipherPath(childPlain) {
-                var st = stat()
-                if lstat(cipherPath, &st) == 0 {
-                    childInode = st.st_ino
+            var itemAttributes: FSItem.Attributes? = nil
+            if childInode == 0 || attributes != nil {
+                // The entry may vanish between the listing and this stat. Skip it:
+                // FSKit rejects attributes that are missing requested fields.
+                guard let st = try? engine.stat(childPlain) else {
+                    idx += 1
+                    continue
+                }
+                if childInode == 0 {
+                    childInode = st.inode
+                }
+                if let req = attributes {
+                    itemAttributes = makeAttributes(
+                        from: st,
+                        itemType: childType,
+                        inode: childInode,
+                        parentInode: dirItem.inode,
+                        request: req
+                    )
                 }
             }
 
             let itemID = FSItem.Identifier(rawValue: childInode) ?? .invalid
-            var itemAttributes: FSItem.Attributes? = nil
-
-            if let req = attributes {
-                itemAttributes = buildAttributes(
-                    forPlainPath: childPlain,
-                    itemType: childType,
-                    inode: childInode,
-                    parentInode: dirItem.inode,
-                    request: req
-                )
-            }
 
             let ok = packer.packEntry(
                 name: FSFileName(string: entry.name),
@@ -296,6 +300,34 @@ final class GocryptfsVolume: FSVolume,
         replyHandler(verifier, nil)
     }
 
+    /// Key of a name in a directory listing: SipHash (Swift's Hasher, seeded at
+    /// random per process) of its UTF-8 bytes, in 1...2^54. Unkeyed FNV-1a let
+    /// anyone who can name files pick two names with the same key.
+    static func listingKey(for name: String) -> UInt64 {
+        var hasher = Hasher()
+        Array(name.utf8).withUnsafeBytes { hasher.combine(bytes: $0) }
+        return (UInt64(bitPattern: Int64(hasher.finalize())) >> 10) + 1
+    }
+
+    /// Entries in listing order with the position each one resumes from. Entries
+    /// go by key, names that share a key by their bytes; the low 8 bits of a
+    /// position count within such a group, so a cookie between two of them
+    /// skips neither. Positions start at 2^8 (cookie 0 starts the listing) and
+    /// stay below 2^62 + 2^8, so position + 1 fits a cookie.
+    static func listingOrder(_ entries: [DirEntry], key: (String) -> UInt64) -> [(position: UInt64, entry: DirEntry)] {
+        let keyed = entries.map { (key: key($0.name), entry: $0) }.sorted {
+            $0.key != $1.key ? $0.key < $1.key : Array($0.entry.name.utf8).lexicographicallyPrecedes($1.entry.name.utf8)
+        }
+        var ordered: [(position: UInt64, entry: DirEntry)] = []
+        ordered.reserveCapacity(keyed.count)
+        var inGroup: UInt64 = 0
+        for (i, item) in keyed.enumerated() {
+            inGroup = i > 0 && keyed[i - 1].key == item.key ? min(inGroup + 1, 0xff) : 0
+            ordered.append((position: item.key << 8 | inGroup, entry: item.entry))
+        }
+        return ordered
+    }
+
     public func getAttributes(_ desiredAttributes: FSItem.GetAttributesRequest,
                               of item: FSItem,
                               replyHandler: @escaping (FSItem.Attributes?, Error?) -> Void) {
@@ -303,75 +335,78 @@ final class GocryptfsVolume: FSVolume,
             return replyHandler(nil, POSIXError(.EINVAL))
         }
 
-        let attrs = buildAttributes(
-            forPlainPath: gcItem.plainPath,
-            itemType: gcItem.itemType,
-            inode: gcItem.inode,
-            parentInode: gcItem.parent?.inode ?? 0,
-            request: desiredAttributes
-        )
-        replyHandler(attrs, nil)
+        do {
+            replyHandler(try attributes(of: gcItem, request: desiredAttributes), nil)
+        } catch {
+            // The item is gone (removed here, or by a sync client underneath us).
+            // Report that instead of an empty attribute set, which FSKit faults on
+            // ("Reported attributes are incomplete") and turns into EINVAL.
+            replyHandler(nil, Self.posixError(for: error, default: .ENOENT))
+        }
     }
 
-    func buildAttributes(forPlainPath plainPath: String,
-                         itemType: FSItem.ItemType,
-                         inode: UInt64,
-                         parentInode: UInt64,
-                         request: FSItem.GetAttributesRequest) -> FSItem.Attributes {
-        let attrs = FSItem.Attributes()
-        let cipherPath: String
-        if plainPath.isEmpty {
-            cipherPath = cipherURL.path
-        } else if let cPath = engine.cipherPath(plainPath) {
-            cipherPath = cPath
-        } else {
-            return attrs
+    /// Maps engine errors onto the errno FSKit should hand to the kernel. Every
+    /// callback goes through here. The engine's errno passes through as is: the
+    /// kernel tells ENOATTR, EEXIST and ERANGE apart (getxattr probes depend on
+    /// it), and backup tools skip a file reported as ENOENT.
+    static func posixError(for error: Error, default fallback: POSIXError.Code = .EIO) -> POSIXError {
+        guard let code = (error as? VaultError)?.posixCode, let posix = POSIXError.Code(rawValue: code) else {
+            return POSIXError(fallback)
         }
+        return POSIXError(posix)
+    }
 
-        var st = stat()
-        guard lstat(cipherPath, &st) == 0 else {
-            return attrs
+    /// Attributes of a live item. Throws when the backing file cannot be stat'ed.
+    func attributes(of item: GocryptfsItem, request: FSItem.GetAttributesRequest) throws -> FSItem.Attributes {
+        let st: ItemStat
+        if item.plainPath.isEmpty {
+            st = try engine.stat("")
+        } else {
+            st = try item.withRef { try engine.stat($0) }
         }
+        return makeAttributes(
+            from: st,
+            itemType: item.itemType,
+            inode: item.inode,
+            parentInode: item.parent?.inode ?? 0,
+            request: request
+        )
+    }
+
+    func makeAttributes(from st: ItemStat,
+                        itemType: FSItem.ItemType,
+                        inode: UInt64,
+                        parentInode: UInt64,
+                        request: FSItem.GetAttributesRequest) -> FSItem.Attributes {
+        let attrs = FSItem.Attributes()
 
         if request.isAttributeWanted(.uid) {
-            attrs.uid = st.st_uid
+            attrs.uid = st.uid
         }
         if request.isAttributeWanted(.gid) {
-            attrs.gid = st.st_gid
+            attrs.gid = st.gid
         }
         if request.isAttributeWanted(.mode) {
-            attrs.mode = UInt32(Int32(st.st_mode) & 0o7777)
+            attrs.mode = st.mode & 0o7777
         }
         if request.isAttributeWanted(.linkCount) {
-            attrs.linkCount = UInt32(st.st_nlink)
+            attrs.linkCount = st.linkCount
         }
         if request.isAttributeWanted(.flags) {
-            attrs.flags = st.st_flags
+            attrs.flags = st.flags
         }
         if request.isAttributeWanted(.type) {
             attrs.type = itemType
         }
         if request.isAttributeWanted(.fileID) {
-            attrs.fileID = FSItem.Identifier(rawValue: inode != 0 ? inode : st.st_ino) ?? .invalid
+            attrs.fileID = FSItem.Identifier(rawValue: inode != 0 ? inode : st.inode) ?? .invalid
         }
         if request.isAttributeWanted(.parentID) {
             attrs.parentID = FSItem.Identifier(rawValue: parentInode) ?? .invalid
         }
 
-        // Plain size calculation
-        let plainSize: UInt64
-        switch itemType {
-        case .directory:
-            plainSize = 4096
-        case .symlink:
-            if let target = try? engine.readlink(plainPath) {
-                plainSize = UInt64(target.utf8.count)
-            } else {
-                plainSize = UInt64(st.st_size)
-            }
-        default:
-            plainSize = engine.plainSize(cipherSize: UInt64(st.st_size))
-        }
+        // The engine already reports plaintext sizes for files and symlinks.
+        let plainSize: UInt64 = itemType == .directory ? 4096 : st.size
 
         if request.isAttributeWanted(.size) {
             attrs.size = plainSize
@@ -381,16 +416,16 @@ final class GocryptfsVolume: FSVolume,
         }
 
         if request.isAttributeWanted(.accessTime) {
-            attrs.accessTime = st.st_atimespec
+            attrs.accessTime = st.accessTime
         }
         if request.isAttributeWanted(.modifyTime) {
-            attrs.modifyTime = st.st_mtimespec
+            attrs.modifyTime = st.modifyTime
         }
         if request.isAttributeWanted(.changeTime) {
-            attrs.changeTime = st.st_ctimespec
+            attrs.changeTime = st.changeTime
         }
         if request.isAttributeWanted(.birthTime) {
-            attrs.birthTime = st.st_birthtimespec
+            attrs.birthTime = st.birthTime
         }
 
         return attrs

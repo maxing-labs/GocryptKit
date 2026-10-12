@@ -37,27 +37,25 @@ xcodebuild -project GocryptKit.xcodeproj -scheme GocryptKit \
 echo "     $ARCHIVE"
 
 say "3/8  Stage and embed Developer ID (Direct) profile"
-if [ -f "$PROFILE_EXT" ] && [ -f "$PROFILE_APP" ]; then
-  rm -rf "$STAGE"; mkdir -p "$STAGE"
-  cp -R "$ARCHIVE/Products/Applications/GocryptKit.app" "$APP"
-  cp "$PROFILE_EXT" "$EXT/Contents/embedded.provisionprofile"
-  cp "$PROFILE_APP" "$APP/Contents/embedded.provisionprofile"
-  echo "     ext : $(security cms -D -i "$PROFILE_EXT" | plutil -extract Name raw -)"
-  echo "     host: $(security cms -D -i "$PROFILE_APP" | plutil -extract Name raw -)"
-else
-  echo "     DirectDistribution profiles not found, continuing with archive signature..."
-  rm -rf "$STAGE"; mkdir -p "$STAGE"
-  cp -R "$ARCHIVE/Products/Applications/GocryptKit.app" "$APP"
-fi
+# A build without these profiles, or with profiles that do not provision all
+# devices, launches here and fails everywhere else. Stop instead of continuing.
+Scripts/check-profile.sh "$PROFILE_EXT" "$IDENTITY"
+Scripts/check-profile.sh "$PROFILE_APP" "$IDENTITY"
+rm -rf "$STAGE"; mkdir -p "$STAGE"
+cp -R "$ARCHIVE/Products/Applications/GocryptKit.app" "$APP"
+cp "$PROFILE_EXT" "$EXT/Contents/embedded.provisionprofile"
+cp "$PROFILE_APP" "$APP/Contents/embedded.provisionprofile"
 
 say "4/8  Inside-out signing (strictly no --deep)"
-if security find-identity -v -p codesigning | grep -q "$IDENTITY"; then
-  codesign --force --options runtime --timestamp \
-    --sign "$IDENTITY" --entitlements "$ENTS_EXT" "$EXT"
-  codesign --force --options runtime --timestamp \
-    --sign "$IDENTITY" --entitlements "$ENTS_APP" "$APP"
-  echo "     ✓ Resigned with Developer ID certificate"
+if ! security find-identity -v -p codesigning | grep -q "$IDENTITY"; then
+  echo "Fatal: signing identity $IDENTITY is not in the keychain."
+  exit 1
 fi
+codesign --force --options runtime --timestamp \
+  --sign "$IDENTITY" --entitlements "$ENTS_EXT" "$EXT"
+codesign --force --options runtime --timestamp \
+  --sign "$IDENTITY" --entitlements "$ENTS_APP" "$APP"
+echo "     ✓ Resigned with Developer ID certificate"
 
 if ! "$APP/Contents/MacOS/GocryptKit" version >/dev/null 2>&1; then
   echo "Fatal: Signed host failed to launch (blocked by AMFI)."
@@ -66,15 +64,9 @@ fi
 echo "     ✓ Signed host launches successfully"
 codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | tail -2
 
-say "5/8  Validate profile type"
-if [ -f "$APP/Contents/embedded.provisionprofile" ]; then
-  for pp in "$APP/Contents/embedded.provisionprofile" "$EXT/Contents/embedded.provisionprofile"; do
-    security cms -D -i "$pp" > /tmp/_pp0.plist
-    /usr/libexec/PlistBuddy -c 'Print :ProvisionsAllDevices' /tmp/_pp0.plist >/dev/null 2>&1 \
-      || echo "Notice: $pp lacks ProvisionsAllDevices (normal in dev environment)"
-  done
-  rm -f /tmp/_pp0.plist
-fi
+say "5/8  Validate embedded profiles"
+Scripts/check-profile.sh "$APP/Contents/embedded.provisionprofile" "$IDENTITY"
+Scripts/check-profile.sh "$EXT/Contents/embedded.provisionprofile" "$IDENTITY"
 
 say "6/8  Notarize App and staple (optional)"
 submit_and_wait() {

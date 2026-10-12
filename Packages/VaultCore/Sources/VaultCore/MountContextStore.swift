@@ -35,6 +35,12 @@ public enum MountContextStore {
         accountPrefix + Vault.canonicalKey(path: cipherPath)
     }
 
+    /// The vault key (canonical cipher path) a Keychain account belongs to,
+    /// whether the account holds a credential or a mount context.
+    public static func vaultKey(forAccount account: String) -> String {
+        account.hasPrefix(accountPrefix) ? String(account.dropFirst(accountPrefix.count)) : account
+    }
+
     /// Saves the mount context into the shared Keychain.
     @discardableResult
     public static func save(_ context: MountContext, for cipherPath: String) -> Bool {
@@ -45,7 +51,7 @@ public enum MountContextStore {
         let account = accountKey(for: cipherPath)
         let ok = KeychainStore.saveCredential(account: account, data: data)
         if ok {
-            logger.info("Saved MountContext '\(context.volumeName, privacy: .public)' (readOnly: \(context.isReadOnly)) for \(cipherPath, privacy: .private)")
+            logger.info("Saved MountContext '\(context.volumeName, privacy: .private)' (readOnly: \(context.isReadOnly)) for \(cipherPath, privacy: .private)")
         }
         return ok
     }

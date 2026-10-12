@@ -90,11 +90,28 @@ public struct Vault: Codable, Identifiable, Hashable, Sendable {
     ///
     /// If the path does not exist, `realpath` fails and falls back to `normalize` — non-existent
     /// paths cannot be mounted or found in the mount table anyway.
+    ///
+    /// The data volume's firmlinks (/Users, /private, /Applications …) give each of their
+    /// paths a second spelling under `/System/Volumes/Data` that `realpath` keeps. Through it
+    /// the same vault got mounted twice; that spelling is folded onto the short one when
+    /// both name the same directory.
     public static func canonicalKey(path: String) -> String {
         let normalized = normalize(path: path)
         guard let resolved = realpath(normalized, nil) else { return normalized }
         defer { free(resolved) }
-        return String(cString: resolved)
+        let canonical = String(cString: resolved)
+        let dataVolume = "/System/Volumes/Data/"
+        if canonical.hasPrefix(dataVolume) {
+            let short = "/" + canonical.dropFirst(dataVolume.count)
+            if isSameFile(canonical, short) { return short }
+        }
+        return canonical
+    }
+
+    private static func isSameFile(_ a: String, _ b: String) -> Bool {
+        var sa = stat(), sb = stat()
+        guard stat(a, &sa) == 0, stat(b, &sb) == 0 else { return false }
+        return sa.st_dev == sb.st_dev && sa.st_ino == sb.st_ino
     }
 
     /// Derives default vault configuration: name from ciphertext directory, mount point at ~/Volumes/<name>.

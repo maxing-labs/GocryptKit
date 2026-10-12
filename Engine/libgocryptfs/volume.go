@@ -6,10 +6,10 @@ package main
 import (
 	"C"
 	"os"
-	"sync"
-	"syscall"
 	"path/filepath"
 	"runtime/debug"
+	"sync"
+	"syscall"
 
 	"libgocryptfs/v2/internal/configfile"
 	"libgocryptfs/v2/internal/contentenc"
@@ -19,18 +19,29 @@ import (
 	"libgocryptfs/v2/internal/syscallcompat"
 )
 
-type File struct {
-	fd          *os.File
-	path        string
+type inodeKey struct {
+	dev uint64
+	ino uint64
+}
+
+// All handles for one backing inode share header identity and content locking.
+type fileEntry struct {
 	ID          []byte
+	idLock      sync.Mutex
+	contentLock sync.RWMutex
+	refs        int // protected by Volume.handlesLock
+}
+
+type File struct {
+	fd   *os.File
+	path string
+	key  inodeKey
+	*fileEntry
 	// fdLock prevents the fd to be closed while we are in the middle of
 	// an operation.
-	// Every FUSE entrypoint should RLock(). The only user of Lock() is
-	// Release(), which closes the fd and sets "released" to true.
-	fdLock      sync.RWMutex
-	// ContentLock protects on-disk content from concurrent writes. Every writer
-	// must take this lock before modifying the file content.
-	contentLock sync.RWMutex
+	// lockFile takes RLock while holding handlesLock; close removes the
+	// handle from the table before taking Lock and closing the fd.
+	fdLock sync.RWMutex
 }
 
 type Volume struct {
@@ -40,16 +51,61 @@ type Volume struct {
 	// dirIVLock: Lock()ed if any "gocryptfs.diriv" file is modified
 	// Readers must RLock() it to prevent them from seeing intermediate
 	// states
-	dirIVLock      sync.RWMutex
-	nameTransform  *nametransform.NameTransform
-	cryptoCore     *cryptocore.CryptoCore
-	contentEnc     *contentenc.ContentEnc
-	dirCache       dirCache
-	handlesLock    sync.RWMutex
-	fileHandles    map[int]*File
+	dirIVLock     sync.RWMutex
+	nameTransform *nametransform.NameTransform
+	cryptoCore    *cryptocore.CryptoCore
+	contentEnc    *contentenc.ContentEnc
+	dirCache      dirCache
+	handlesLock   sync.RWMutex
+	fileHandles   map[int]*File
+	fileEntries   map[inodeKey]*fileEntry
+	// Handle IDs are never reused: a stale ID held by a racing caller must
+	// fail with EBADF instead of landing on another file. Protected by handlesLock.
+	nextHandle int
+	// Exported operations hold an in-flight reference (acquireVolume/release)
+	// so gcf_close cannot wipe the key material underneath them.
+	lifeLock sync.Mutex
+	lifeCond *sync.Cond
+	closing  bool
+	active   int
+}
+
+// acquireVolume returns the volume with an in-flight reference, or nil if it
+// is unknown or already closing. Every successful call must be paired with
+// release(). A nested call made while the volume is closing fails instead of
+// blocking, so it cannot deadlock against gcf_close.
+func acquireVolume(volumeID int) *Volume {
+	value, ok := OpenedVolumes.Load(volumeID)
+	if !ok {
+		return nil
+	}
+	volume := value.(*Volume)
+	volume.lifeLock.Lock()
+	defer volume.lifeLock.Unlock()
+	if volume.closing {
+		return nil
+	}
+	volume.active++
+	return volume
+}
+
+func (volume *Volume) release() {
+	volume.lifeLock.Lock()
+	volume.active--
+	if volume.active == 0 {
+		volume.lifeCond.Broadcast()
+	}
+	volume.lifeLock.Unlock()
 }
 
 var OpenedVolumes sync.Map
+
+// Volume IDs are never reused: a late call carrying the ID of a closed volume
+// must fail instead of operating on whichever volume was opened next.
+var (
+	volumeIDLock sync.Mutex
+	nextVolumeID int
+)
 
 func wipe(d []byte) {
 	for i := range d {
@@ -97,22 +153,18 @@ func registerNewVolume(rootCipherDir string, masterkey []byte, cf *configfile.Co
 	}
 	newVolume.dirCache = dirCache{ivLen: ivLen}
 	newVolume.fileHandles = make(map[int]*File)
+	newVolume.fileEntries = make(map[inodeKey]*fileEntry)
+	newVolume.lifeCond = sync.NewCond(&newVolume.lifeLock)
 
-	//find unused volumeID
-	volumeID := -1
-	c := 0
-	for volumeID == -1 {
-		_, ok := OpenedVolumes.Load(c)
-		if !ok {
-			volumeID = c
-		}
-		c++
-	}
+	volumeIDLock.Lock()
+	volumeID := nextVolumeID
+	nextVolumeID++
+	volumeIDLock.Unlock()
+	newVolume.volumeID = volumeID
 	OpenedVolumes.Store(volumeID, &newVolume)
 	return volumeID
 }
 
-//export gcf_init
 func gcf_init(rootCipherDir string, password, givenScryptHash, returnedScryptHashBuff []byte) int {
 	defer wipe(password)
 	cf, err := configfile.Load(filepath.Join(rootCipherDir, configfile.ConfDefaultName))
@@ -129,34 +181,42 @@ func gcf_init(rootCipherDir string, password, givenScryptHash, returnedScryptHas
 	return volumeID
 }
 
-//export gcf_close
 func gcf_close(volumeID int) {
-	value, ok := OpenedVolumes.Load(volumeID)
+	// Unpublish first so no new operation can find the volume.
+	value, ok := OpenedVolumes.LoadAndDelete(volumeID)
 	if !ok {
 		return
 	}
 	volume := value.(*Volume)
+	// Then wait for in-flight operations. Handle-less paths (names, xattrs,
+	// symlinks) and handles opened after a snapshot also use the ciphers.
+	volume.lifeLock.Lock()
+	volume.closing = true
+	for volume.active > 0 {
+		volume.lifeCond.Wait()
+	}
+	volume.lifeLock.Unlock()
+	volume.handlesLock.Lock()
+	handles := volume.fileHandles
+	volume.fileHandles = make(map[int]*File)
+	volume.fileEntries = make(map[inodeKey]*fileEntry)
+	volume.handlesLock.Unlock()
+	for _, f := range handles {
+		f.fd.Close()
+	}
+	// Stop the expiry goroutine: it would keep the volume, and with it the
+	// filename cipher's key schedule, reachable for the life of the process.
+	volume.dirCache.Stop()
 	volume.cryptoCore.Wipe()
-	volume.handlesLock.RLock()
-	fileHandles := make([]int, 0, len(volume.fileHandles))
-	for i := range volume.fileHandles {
-		fileHandles = append(fileHandles, i)
-	}
-	volume.handlesLock.RUnlock()
-	for i := range fileHandles {
-		gcf_close_file(volumeID, i)
-	}
-	volume.dirCache.Clear()
-	OpenedVolumes.Delete(volumeID)
+	volume.nameTransform = nil
+	volume.contentEnc = nil
 }
 
-//export gcf_is_closed
 func gcf_is_closed(volumeID int) bool {
 	_, ok := OpenedVolumes.Load(volumeID)
 	return !ok
 }
 
-//export gcf_change_password
 func gcf_change_password(rootCipherDir string, oldPassword, givenScryptHash, newPassword, returnedScryptHashBuff []byte) bool {
 	success := false
 	cf, err := configfile.Load(filepath.Join(rootCipherDir, configfile.ConfDefaultName))
@@ -181,7 +241,6 @@ func gcf_change_password(rootCipherDir string, oldPassword, givenScryptHash, new
 	return success
 }
 
-//export gcf_create_volume
 func gcf_create_volume(rootCipherDir string, password []byte, plaintextNames bool, xchacha int8, logN int, creator string, returnedScryptHashBuff []byte) bool {
 	var useXChaCha bool
 	switch xchacha {

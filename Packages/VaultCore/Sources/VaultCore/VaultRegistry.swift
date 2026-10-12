@@ -39,9 +39,7 @@ public struct VaultRegistry: Codable, Equatable, Sendable {
         if let existing = vault(forCipherDir: normalized) {
             throw VaultRegistryError.duplicate(existingName: existing.name)
         }
-        let vault = Vault.makeDefault(cipherDir: URL(fileURLWithPath: normalized))
-        vaults.append(vault)
-        return vault
+        return append(Vault.makeDefault(cipherDir: URL(fileURLWithPath: normalized)))
     }
 
     /// Registers a newly created vault by this app. Skips duplicate checks other than
@@ -50,7 +48,21 @@ public struct VaultRegistry: Codable, Equatable, Sendable {
     public mutating func addCreated(cipherDir: URL) -> Vault {
         let normalized = Vault.normalize(path: cipherDir.path)
         if let existing = vault(forCipherDir: normalized) { return existing }
-        let vault = Vault.makeDefault(cipherDir: URL(fileURLWithPath: normalized))
+        return append(Vault.makeDefault(cipherDir: URL(fileURLWithPath: normalized)))
+    }
+
+    /// Appends a new vault. The default mount point is `~/Volumes/<directory name>`;
+    /// when another vault already uses it (same directory name elsewhere), this one
+    /// gets `<name> 2`, `<name> 3` … Mount points compare case-insensitively, as
+    /// on the default APFS volume.
+    private mutating func append(_ newVault: Vault) -> Vault {
+        var vault = newVault
+        let taken = Set(vaults.map { $0.mountPointPath.lowercased() })
+        if taken.contains(vault.mountPointPath.lowercased()) {
+            var n = 2
+            while taken.contains("\(newVault.mountPointPath) \(n)".lowercased()) { n += 1 }
+            vault.mountPointPath = "\(newVault.mountPointPath) \(n)"
+        }
         vaults.append(vault)
         return vault
     }

@@ -1,4 +1,5 @@
 import AppKit
+import VaultCore
 
 @main
 @MainActor
@@ -9,11 +10,11 @@ struct GocryptKitApp {
 
     static func main() {
         let args = ProcessInfo.processInfo.arguments
-        let cliCommands: Set<String> = ["init", "mount", "umount", "status", "version"]
-        if args.count > 1 && cliCommands.contains(args[1]) {
+        if args.count > 1 && CLIArguments.commands.contains(args[1]) {
             CLIRouter.runCLI(arguments: Array(args.dropFirst()))
         } else {
             LanguageManager.shared.syncStartupLanguage()
+            TypingSubstitutions.disableInTextFields()
             let delegate = AppDelegate()
             appDelegate = delegate
             let app = NSApplication.shared

@@ -11,9 +11,10 @@ cd "$ROOT_DIR"
 OUTPUT_DIR="$ROOT_DIR/build/ios-products"
 mkdir -p "$OUTPUT_DIR"
 
-TEMP_BUILD="/tmp/gocryptfs_ios_pack"
-rm -rf "$TEMP_BUILD"
-mkdir -p "$TEMP_BUILD"
+# Private scratch directory: a fixed path under /tmp can be taken over by anyone
+# on the Mac between compiling and signing.
+TEMP_BUILD="$(mktemp -d)"
+trap 'rm -rf "$TEMP_BUILD"' EXIT
 
 # 1. 编译 VaultCore (iOS arm64 静态库)
 echo ">> 编译 VaultCore iOS 模块..."
@@ -111,10 +112,7 @@ if [ -f "App-iOS/PrivacyInfo.xcprivacy" ]; then
     cp "App-iOS/PrivacyInfo.xcprivacy" "$APP_DIR/"
 fi
 
-# 拷贝图标资源
-if [ -d "/tmp/ios_build/assets" ]; then
-    cp -R /tmp/ios_build/assets/*.png "$APP_DIR/" 2>/dev/null || true
-fi
+# 拷贝图标资源（只取仓库里的，不从共享的 /tmp 拷任何东西进待签名的包）
 cp App-iOS/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png "$APP_DIR/AppIcon60x60@2x.png" 2>/dev/null || true
 
 # 4. 代码签名 (优先使用 Apple Development 证书，若无则使用 Ad-Hoc 签名)

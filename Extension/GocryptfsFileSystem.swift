@@ -11,6 +11,40 @@ final class GocryptfsFileSystem: FSUnaryFileSystem, FSUnaryFileSystemOperations,
     var resource: FSPathURLResource?
     var volume: GocryptfsVolume?
 
+    /// Options that reach `loadResource` from `/sbin/mount -o ...`.
+    struct LoadOptions: Equatable {
+        var volumeName: String?
+        var isReadOnly = false
+
+        /// Tokens are matched exactly (`key=value` or a bare flag), after splitting
+        /// on commas: `/sbin/mount` hands over `ro,rdonly,volname=...` as one string.
+        ///
+        /// There is deliberately no option that names a Keychain account. The
+        /// credential is always looked up under the canonical path of the resource
+        /// being mounted; a caller-chosen account let any process of the same user
+        /// delete another vault's in-flight credential.
+        static func parse(_ taskOptions: [String]) -> LoadOptions {
+            var options = LoadOptions()
+            for token in taskOptions.flatMap({ $0.components(separatedBy: ",") }) {
+                if let separator = token.firstIndex(of: "=") {
+                    let key = token[..<separator]
+                    let value = String(token[token.index(after: separator)...])
+                    if key == "volname", !value.isEmpty, options.volumeName == nil {
+                        options.volumeName = value
+                    }
+                    continue
+                }
+                switch token.lowercased() {
+                case "rdonly", "ro", "-r", "--rdonly", "--readonly":
+                    options.isReadOnly = true
+                default:
+                    break
+                }
+            }
+            return options
+        }
+    }
+
     public override init() {
         super.init()
         logger.debug("GocryptfsFileSystem initialized")
@@ -39,7 +73,7 @@ final class GocryptfsFileSystem: FSUnaryFileSystem, FSUnaryFileSystemOperations,
         let containerUUID = UUID()
         let containerID = FSContainerIdentifier(uuid: containerUUID)
         let probeResult = FSProbeResult.usable(name: reportedName, containerID: containerID)
-        logger.info("probeResource: recognized gocryptfs volume '\(reportedName, privacy: .public)' at \(cipherURL.path, privacy: .private)")
+        logger.info("probeResource: recognized gocryptfs volume '\(reportedName, privacy: .private)' at \(cipherURL.path, privacy: .private)")
         replyHandler(probeResult, nil)
     }
 
@@ -58,34 +92,14 @@ final class GocryptfsFileSystem: FSUnaryFileSystem, FSUnaryFileSystemOperations,
 
         // 1. Check MountContextStore first (highest authority from host app)
         let mountContext = MountContextStore.load(for: urlResource.url.path)
-        var customVolName: String? = mountContext?.volumeName
-        var isReadOnly = mountContext?.isReadOnly ?? false
-
-        // 2. Parse options for vault=<uuid>, volname=<name>, and read-only flags
-        // Flatten options by splitting on comma to support "-o ro,rdonly,volname=..."
-        var vaultUUID: String? = nil
-        let tokens = options.taskOptions.flatMap { $0.components(separatedBy: ",") }
-        for opt in tokens {
-            if opt.contains("vault=") {
-                let parts = opt.components(separatedBy: "vault=")
-                if parts.count > 1 {
-                    vaultUUID = parts[1].components(separatedBy: ",").first
-                }
-            }
-            if opt.hasPrefix("volname=") {
-                let parsedName = String(opt.dropFirst("volname=".count))
-                if customVolName == nil {
-                    customVolName = parsedName
-                }
-            }
-            let lower = opt.lowercased()
-            if lower == "rdonly" || lower == "ro" || lower == "-r" || lower == "--rdonly" || lower == "--readonly" {
-                isReadOnly = true
-            }
-        }
+        // 2. Fall back to the mount options for a plain command-line mount.
+        let parsed = LoadOptions.parse(options.taskOptions)
+        let customVolName: String? = mountContext?.volumeName ?? parsed.volumeName
+        var isReadOnly = (mountContext?.isReadOnly ?? false) || parsed.isReadOnly
         if let custom = customVolName, custom.hasSuffix(Vault.readOnlySuffix) {
             isReadOnly = true
         }
+        let account = Vault.canonicalKey(path: urlResource.url.path)
 
         // Credentials come from the shared Keychain access group, written by the
         // host app after it has validated the password the user typed. There is
@@ -114,21 +128,13 @@ final class GocryptfsFileSystem: FSUnaryFileSystem, FSUnaryFileSystemOperations,
             }
         }
 
-        if let uuid = vaultUUID {
-            engine = tryCredential(account: uuid)
-        }
-        if engine == nil {
-            engine = tryCredential(account: Vault.canonicalKey(path: urlResource.url.path))
-        }
+        engine = tryCredential(account: account)
 
         guard let activeEngine = engine else {
             logger.error("loadResource: Authentication failed or no valid credential found")
             // Clean up any credential even on auth failure to prevent
             // brute-force dictionary remnants lingering in the Keychain.
-            if let uuid = vaultUUID {
-                KeychainStore.deleteCredential(account: uuid)
-            }
-            KeychainStore.deleteCredential(account: Vault.canonicalKey(path: urlResource.url.path))
+            KeychainStore.deleteCredential(account: account)
             urlResource.url.stopAccessingSecurityScopedResource()
             self.resource = nil
             return replyHandler(nil, POSIXError(.EACCES))
@@ -137,16 +143,13 @@ final class GocryptfsFileSystem: FSUnaryFileSystem, FSUnaryFileSystemOperations,
         // Consume-and-destroy: master key is now in memory, remove
         // the credential from the Keychain immediately. Even if the
         // volume is ejected from Finder or umount, no secret remains.
-        if let uuid = vaultUUID {
-            KeychainStore.deleteCredential(account: uuid)
-        }
-        KeychainStore.deleteCredential(account: Vault.canonicalKey(path: urlResource.url.path))
+        KeychainStore.deleteCredential(account: account)
 
         do {
             let vol = try GocryptfsVolume(engine: activeEngine, cipherURL: urlResource.url, volumeName: customVolName, isReadOnly: isReadOnly)
             self.volume = vol
             self.containerStatus = .ready
-            logger.info("loadResource: successfully mounted gocryptfs volume '\(customVolName ?? "default", privacy: .public)' (readOnly: \(isReadOnly, privacy: .public))")
+            logger.info("loadResource: successfully mounted gocryptfs volume '\(customVolName ?? "default", privacy: .private)' (readOnly: \(isReadOnly, privacy: .public))")
             replyHandler(vol, nil)
         } catch {
             logger.error("loadResource: failed to create GocryptfsVolume: \(error.localizedDescription, privacy: .private)")

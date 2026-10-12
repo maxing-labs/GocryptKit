@@ -26,6 +26,15 @@ const (
 	scryptMinLogN = 10
 	// We always generate 32-byte salts. Anything smaller than that is rejected.
 	scryptMinSaltLen = 32
+
+	// Upper limits. The parameters come from gocryptfs.conf, which may have been
+	// planted or altered (the ciphertext directory may be shared or synced).
+	// scrypt allocates 128·N·R bytes up front (logN 30 is 1 TiB) and runs P
+	// times: an out-of-memory crash of the FSKit extension, or hours of CPU in
+	// the host app. 1 GiB is 16 times the default (logN 16, R 8); gocryptfs
+	// always writes P 1, and N·R·P may not exceed what 1 GiB allows at P 1.
+	scryptMaxMemory = 1 << 30
+	scryptMaxP      = 16
 )
 
 // ScryptKDF is an instance of the scrypt key deriviation function.
@@ -80,10 +89,9 @@ func (s *ScryptKDF) LogN() int {
 	return int(math.Log2(float64(s.N)) + 0.5)
 }
 
-// validateParams checks that all parameters are at or above hardcoded limits.
-// If not, it exists with an error message.
-// This makes sure we do not get weak parameters passed through a
-// rougue gocryptfs.conf.
+// validateParams checks that all parameters are within hardcoded limits: not
+// so weak that the key is easy to guess, not so costly that deriving it takes
+// the process down. Both can come from a rogue gocryptfs.conf.
 func (s *ScryptKDF) validateParams() error {
 	minN := 1 << scryptMinLogN
 	if s.N < minN {
@@ -95,11 +103,23 @@ func (s *ScryptKDF) validateParams() error {
 	if s.P < scryptMinP {
 		return fmt.Errorf("fatal: scrypt parameter P below minimum: value=%d, min=%d", s.P, scryptMinP)
 	}
+	// 128·N·R <= scryptMaxMemory, written so that it cannot overflow (R >= 8 here).
+	if maxNR := scryptMaxMemory / 128; s.R > maxNR || s.N > maxNR/s.R {
+		return fmt.Errorf("fatal: scrypt parameters N=%d R=%d need more than %d MiB of memory", s.N, s.R, scryptMaxMemory>>20)
+	}
+	if s.P > scryptMaxP {
+		return fmt.Errorf("fatal: scrypt parameter P above maximum: value=%d, max=%d", s.P, scryptMaxP)
+	}
+	// The CPU time grows with N·R·P. Allow as much as the largest memory with P 1.
+	if maxNR := scryptMaxMemory / 128; s.N*s.R > maxNR/s.P {
+		return fmt.Errorf("fatal: scrypt parameters N=%d R=%d P=%d exceed N·R·P=%d", s.N, s.R, s.P, maxNR)
+	}
 	if len(s.Salt) < scryptMinSaltLen {
 		return fmt.Errorf("fatal: scrypt salt length below minimum: value=%d, min=%d", len(s.Salt), scryptMinSaltLen)
 	}
-	if s.KeyLen < cryptocore.KeyLen {
-		return fmt.Errorf("fatal: scrypt parameter KeyLen below minimum: value=%d, min=%d", s.KeyLen, cryptocore.KeyLen)
+	// Any other length makes cryptocore.New panic, and a huge one is allocated first.
+	if s.KeyLen != cryptocore.KeyLen {
+		return fmt.Errorf("fatal: scrypt parameter KeyLen must be %d: value=%d", cryptocore.KeyLen, s.KeyLen)
 	}
 	return nil
 }

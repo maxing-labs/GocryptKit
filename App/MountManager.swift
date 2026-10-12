@@ -110,7 +110,7 @@ final class MountManager: @unchecked Sendable {
         } else {
             payload = .password(password)
         }
-        let credentialData = payload.serialize()
+        let credentialData = try payload.serialize()
         let accountKey = Vault.canonicalKey(path: cipherDir.path)
         let status = KeychainStore.saveCredentialStatus(account: accountKey, data: credentialData)
         guard status == errSecSuccess else {
@@ -128,18 +128,50 @@ final class MountManager: @unchecked Sendable {
         }
     }
 
-    /// Asynchronous mount with non-blocking retry delays (for GUI).
-    func mountVault(cipherDir: URL, mountPoint: URL, password: String, readOnly: Bool = false) async throws {
+    /// Shared preflight of both mount entry points.
+    private func prepareMount(cipherDir: URL, mountPoint: URL, readOnly: Bool) throws -> (cipherDir: URL, mountPoint: URL, canonical: String) {
         let targetMountPoint = readOnly ? URL(fileURLWithPath: Vault.readOnlyMountPoint(for: mountPoint.path)) : mountPoint
         let canonical = Vault.canonicalKey(path: cipherDir.path)
-        recordActiveMount(canonical)
-        defer {
-            removeActiveMount(canonical)
+
+        if let outer = MountTable.gocryptfsVolume(holdingVaultAt: canonical) {
+            throw MountError.insideMountedVault(at: outer)
+        }
+
+        // FSKit only refuses a second mount of the very same path string. Through a
+        // symlink or the /tmp alias the same vault would get mounted twice, with two
+        // engines writing one ciphertext directory. Compare canonical paths ourselves
+        // and hand FSKit the canonical one so its own check applies as well.
+        if let existing = MountTable.gocryptfsMounts()[canonical] {
+            throw MountError.alreadyMounted(at: existing.mountPoint)
+        }
+
+        // Volumes are mounted with `noowners`, so only the path to the mount point
+        // keeps other accounts away from the plaintext. The default root is ours to
+        // lock down: create it as 0700, or tighten it if it is still open.
+        let parent = targetMountPoint.deletingLastPathComponent()
+        if Vault.normalize(path: parent.path) == Vault.normalize(path: MountPointSecurity.defaultMountRoot.path) {
+            do {
+                if try MountPointSecurity.makePrivate(parent) {
+                    logger.info("mount root set to 0700")
+                }
+            } catch {
+                logger.error("could not make the mount root private: \(error.localizedDescription, privacy: .private)")
+            }
         }
 
         // Ensure mountpoint directory exists
         if !FileManager.default.fileExists(atPath: targetMountPoint.path) {
             try FileManager.default.createDirectory(at: targetMountPoint, withIntermediateDirectories: true)
+        }
+        return (URL(fileURLWithPath: canonical), targetMountPoint, canonical)
+    }
+
+    /// Asynchronous mount with non-blocking retry delays (for GUI).
+    func mountVault(cipherDir: URL, mountPoint: URL, password: String, readOnly: Bool = false) async throws {
+        let (cipherDir, targetMountPoint, canonical) = try prepareMount(cipherDir: cipherDir, mountPoint: mountPoint, readOnly: readOnly)
+        recordActiveMount(canonical)
+        defer {
+            removeActiveMount(canonical)
         }
 
         var lastError: Error?
@@ -147,7 +179,8 @@ final class MountManager: @unchecked Sendable {
             do {
                 try prepareCredential(cipherDir: cipherDir, password: password)
                 try Self.runMount(cipherDir: cipherDir, mountPoint: targetMountPoint, readOnly: readOnly)
-                MountRecordStore.rememberCipherDir(cipherDir, for: targetMountPoint)
+                MountRecordStore.rememberCipherDir(cipherDir, for: targetMountPoint,
+                                                   mountOnName: MountTable.gocryptfsVolume(containing: targetMountPoint.path))
                 return
             } catch {
                 lastError = error
@@ -164,22 +197,16 @@ final class MountManager: @unchecked Sendable {
 
         // Mount never succeeded; consume/delete the ephemeral credential
         _ = KeychainStore.deleteCredential(account: canonical)
-        throw lastError ?? VaultError.ioError(EIO)
+        throw lastError ?? VaultError.posix(EIO)
     }
 
     /// Synchronous mount wrapper for CLI / script invocations.
     func mountVaultSync(cipherDir: URL, mountPoint: URL, password: String, readOnly: Bool = false) throws {
-        let targetMountPoint = readOnly ? URL(fileURLWithPath: Vault.readOnlyMountPoint(for: mountPoint.path)) : mountPoint
-        let canonical = Vault.canonicalKey(path: cipherDir.path)
+        let (cipherDir, targetMountPoint, canonical) = try prepareMount(cipherDir: cipherDir, mountPoint: mountPoint, readOnly: readOnly)
 
         recordActiveMount(canonical)
         defer {
             removeActiveMount(canonical)
-        }
-
-        // Ensure mountpoint directory exists
-        if !FileManager.default.fileExists(atPath: targetMountPoint.path) {
-            try FileManager.default.createDirectory(at: targetMountPoint, withIntermediateDirectories: true)
         }
 
         var lastError: Error?
@@ -187,7 +214,8 @@ final class MountManager: @unchecked Sendable {
             do {
                 try prepareCredential(cipherDir: cipherDir, password: password)
                 try Self.runMount(cipherDir: cipherDir, mountPoint: targetMountPoint, readOnly: readOnly)
-                MountRecordStore.rememberCipherDir(cipherDir, for: targetMountPoint)
+                MountRecordStore.rememberCipherDir(cipherDir, for: targetMountPoint,
+                                                   mountOnName: MountTable.gocryptfsVolume(containing: targetMountPoint.path))
                 return
             } catch {
                 lastError = error
@@ -204,7 +232,7 @@ final class MountManager: @unchecked Sendable {
 
         // Mount never succeeded; consume/delete the ephemeral credential
         _ = KeychainStore.deleteCredential(account: canonical)
-        throw lastError ?? VaultError.ioError(EIO)
+        throw lastError ?? VaultError.posix(EIO)
     }
 
     private static let mountAttempts = 3
@@ -242,22 +270,25 @@ final class MountManager: @unchecked Sendable {
         }
     }
 
-    /// Sweep Keychain entries that belong to vaults no longer mounted, protecting actively mounting vaults.
-    func reapOrphanCredentials(knownVaults: [Vault]) {
-        let currentMounts = Set(MountTable.gocryptfsMounts().keys)
-        let inFlight = getInFlightMounts()
-
-        let orphans = OrphanReaper.accountsToReap(
-            knownVaultPaths: knownVaults.map(\.cipherDirPath),
-            mountedCanonicalKeys: currentMounts.union(inFlight),
-            includeMountContext: true
-        )
-        for key in orphans {
-            KeychainStore.deleteCredential(account: key)
+    /// Sweeps stale Keychain items of this service: credentials and mount contexts
+    /// that no mounted or in-flight vault accounts for.
+    ///
+    /// Works from what is actually stored, so leftovers of an interrupted CLI mount
+    /// of an unregistered vault are found too. Items younger than
+    /// `OrphanReaper.gracePeriod` are left alone: this process cannot see the
+    /// in-flight mounts of other processes (the CLI stores a credential seconds
+    /// before the extension consumes it). Call at launch, after a failure and at
+    /// exit, not from a poll.
+    func reapOrphanCredentials() {
+        let protected = Set(MountTable.gocryptfsMounts().keys).union(getInFlightMounts())
+        let orphans = OrphanReaper.accountsToReap(stored: KeychainStore.storedItems(), protectedVaultKeys: protected)
+        for account in orphans {
+            KeychainStore.deleteCredential(account: account)
         }
     }
 
     func unmountVault(mountPoint: URL, force: Bool = false) throws {
+        let mountOnName = MountTable.gocryptfsVolume(containing: mountPoint.path)
         let args = force ? ["-f", mountPoint.path] : [mountPoint.path]
         let (status, errMsg) = try ProcessRunner.runWithTimeout(
             executable: "/sbin/umount",
@@ -268,7 +299,7 @@ final class MountManager: @unchecked Sendable {
             throw UnmountError.parse(code: Int(status), message: errMsg)
         }
 
-        if let cipherPath = MountRecordStore.forgetCipherDir(for: mountPoint) {
+        if let cipherPath = MountRecordStore.forgetCipherDir(for: mountPoint, mountOnName: mountOnName) {
             _ = KeychainStore.deleteCredential(account: cipherPath)
             _ = MountContextStore.delete(for: cipherPath)
         } else {
@@ -277,9 +308,9 @@ final class MountManager: @unchecked Sendable {
 
         // Clean up empty temporary mount point directory created for read-only mounts
         if mountPoint.lastPathComponent.hasSuffix(Vault.readOnlySuffix) {
-            if let contents = try? FileManager.default.contentsOfDirectory(atPath: mountPoint.path), contents.isEmpty {
-                try? FileManager.default.removeItem(at: mountPoint)
-            }
+            // rmdir(2) only removes an empty directory. "Check it is empty, then
+            // removeItem" deletes recursively whatever appeared in between.
+            rmdir(mountPoint.path)
         }
     }
 }

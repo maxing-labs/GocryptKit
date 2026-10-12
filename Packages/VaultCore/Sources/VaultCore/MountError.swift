@@ -9,6 +9,10 @@ public enum MountError: LocalizedError, Sendable, Equatable {
     case busyOrAlreadyMounted
     case invalidPasswordOrMasterKey
     case mountPointNotEmpty
+    /// The same ciphertext directory is already mounted, possibly under another path alias.
+    case alreadyMounted(at: String)
+    /// The ciphertext directory lies inside another mounted vault (at the given mount point).
+    case insideMountedVault(at: String)
     case generic(code: Int, message: String)
 
     public static func parse(code: Int, message: String) -> MountError {
@@ -53,6 +57,10 @@ public enum MountError: LocalizedError, Sendable, Equatable {
             return "Authentication failed: invalid password or masterkey."
         case .mountPointNotEmpty:
             return "Target mount directory is not empty."
+        case .alreadyMounted(let mountPoint):
+            return "This vault is already mounted at \(mountPoint). Mounting it a second time would let two writers corrupt it."
+        case .insideMountedVault(let mountPoint):
+            return "This vault lies inside the mounted vault at \(mountPoint). Mounting it there hangs the system's file system service; move it out first."
         case .generic(let code, let msg):
             let useful = msg.split(separator: "\n").filter { !$0.contains("/Library/Filesystems/gocryptfs.fs") }.joined(separator: "\n")
             let desc = useful.isEmpty ? msg : useful

@@ -41,7 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.window = window
 
         // Defensively sweep any orphan credentials left in Keychain from previous crashes or unmounts
-        MountManager.shared.reapOrphanCredentials(knownVaults: store.vaults)
+        MountManager.shared.reapOrphanCredentials()
     }
 
     @objc func showMainWindow(_ sender: Any?) {
@@ -214,7 +214,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        let mounts = MountTable.gocryptfsMounts()
+        // Only this user's volumes: another account's mounts are not ours to take down.
+        let mounts = Array(MountTable.gocryptfsMounts(ownedBy: getuid()).values)
         guard !mounts.isEmpty else {
             return .terminateNow
         }
@@ -232,37 +233,77 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.addButton(withTitle: loc("Cancel"))
 
         NSApp.activate(ignoringOtherApps: true)
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            unmountAllMountedVaults(mounts: mounts)
-            return .terminateNow
-        } else {
+        guard alert.runModal() == .alertFirstButtonReturn else {
             return .terminateCancel
         }
+        // umount can block for seconds per volume; keep it off the main thread
+        // and answer the termination request once the outcome is known.
+        unmountForQuit(mounts, force: false)
+        return .terminateLater
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        let remaining = MountTable.gocryptfsMounts()
-        if !remaining.isEmpty {
-            unmountAllMountedVaults(mounts: remaining)
-        }
-        MountManager.shared.reapOrphanCredentials(knownVaults: vaultStore?.vaults ?? [])
+        // No unmounting here: applicationShouldTerminate only lets the app quit
+        // once this user's volumes are gone, and a last-moment `umount -f`
+        // would truncate files that are still being written.
+        MountManager.shared.reapOrphanCredentials()
     }
 
-    private func unmountAllMountedVaults(mounts: [String: MountTable.Entry]) {
-        for (_, entry) in mounts {
-            let url = URL(fileURLWithPath: entry.mountPoint)
-            do {
-                try MountManager.shared.unmountVault(mountPoint: url)
-            } catch {
-                logger.error("Failed to unmount \(entry.mountPoint): \(error.localizedDescription), trying force unmount")
-                do {
-                    try MountManager.shared.unmountVault(mountPoint: url, force: true)
-                } catch {
-                    logger.error("Force unmount also failed for \(entry.mountPoint): \(error.localizedDescription)")
-                }
+    private func unmountForQuit(_ mounts: [MountTable.Entry], force: Bool) {
+        Task.detached(priority: .userInitiated) {
+            let outcome = QuitUnmount.attempt(mounts, force: force) { entry, force in
+                try MountManager.shared.unmountVault(mountPoint: URL(fileURLWithPath: entry.mountPoint), force: force)
+                _ = KeychainStore.deleteCredential(account: Vault.canonicalKey(path: entry.sourcePath))
+            }.settled(stillMounted: Array(MountTable.gocryptfsMounts(ownedBy: getuid()).values))
+            await MainActor.run {
+                self.finishQuit(outcome, forced: force)
             }
-            _ = KeychainStore.deleteCredential(account: Vault.canonicalKey(path: entry.sourcePath))
         }
+    }
+
+    private func finishQuit(_ outcome: QuitUnmount.Outcome, forced: Bool) {
+        vaultStore?.refreshMountState()
+        if outcome.allUnmounted {
+            NSApp.reply(toApplicationShouldTerminate: true)
+            return
+        }
+
+        // A volume is still mounted: stay running. Force only on explicit confirmation,
+        // with the same dialog the other unmount entry points use.
+        let alert = NSAlert()
+        NSApp.activate(ignoringOtherApps: true)
+        if !forced && outcome.canQuitByForcing {
+            alert.alertStyle = .warning
+            if outcome.busy.count == 1 {
+                alert.messageText = loc("Volume In Use")
+                alert.informativeText = loc("Vault \"\(displayName(of: outcome.busy[0]))\" is currently in use by another application. Please close related files or Finder windows and try again.")
+                alert.addButton(withTitle: loc("Cancel"))
+                alert.addButton(withTitle: loc("Force Unmount"))
+            } else {
+                alert.messageText = loc("Volumes In Use")
+                let names = outcome.busy.map { "「\(displayName(of: $0))」" }.joined(separator: "、")
+                alert.informativeText = loc("The following vaults are currently in use by other applications: \(names)\nPlease close related files or Finder windows and try again.")
+                alert.addButton(withTitle: loc("Cancel"))
+                alert.addButton(withTitle: loc("Force Unmount All"))
+            }
+            if alert.runModal() == .alertSecondButtonReturn {
+                unmountForQuit(outcome.busy, force: true)
+                return
+            }
+        } else {
+            alert.alertStyle = .critical
+            alert.messageText = forced ? loc("Force Unmount Failed") : loc("Unmount Failed")
+            alert.informativeText = (outcome.busy + outcome.failed).map { displayName(of: $0) }.joined(separator: ", ")
+            alert.runModal()
+        }
+        NSApp.reply(toApplicationShouldTerminate: false)
+    }
+
+    private func displayName(of entry: MountTable.Entry) -> String {
+        let key = Vault.canonicalKey(path: entry.sourcePath)
+        if let vault = vaultStore?.vaults.first(where: { Vault.canonicalKey(path: $0.cipherDirPath) == key }) {
+            return vault.name
+        }
+        return URL(fileURLWithPath: entry.mountPoint).lastPathComponent
     }
 }

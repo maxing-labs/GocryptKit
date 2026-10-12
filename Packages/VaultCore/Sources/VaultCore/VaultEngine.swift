@@ -31,10 +31,9 @@ public enum VaultError: LocalizedError, Equatable {
     case invalidCipherDir
     case configNotFound
     case authFailed
-    case notFound(String)
-    case ioError(Int32)
-    case isClosed
-    case badHandle
+    /// A file operation failed with this errno: ENOENT when the item does not
+    /// exist, EBADF once the engine is shut down.
+    case posix(Int32)
     case emptyPassword
     case vaultAlreadyExists
     case directoryNotEmpty
@@ -49,14 +48,8 @@ public enum VaultError: LocalizedError, Equatable {
             return "gocryptfs.conf not found or corrupted"
         case .authFailed:
             return "Authentication failed: invalid password or masterkey"
-        case .notFound(let path):
-            return "File or directory not found: \(path)"
-        case .ioError(let code):
-            return "I/O error with errno \(code)"
-        case .isClosed:
-            return "Vault is closed"
-        case .badHandle:
-            return "Bad file handle"
+        case .posix(let code):
+            return "\(String(cString: strerror(code))) (errno \(code))"
         case .emptyPassword:
             return "A vault password is required; refusing to create a vault without one"
         case .vaultAlreadyExists:
@@ -64,10 +57,16 @@ public enum VaultError: LocalizedError, Equatable {
         case .directoryNotEmpty:
             return "The directory is not empty; a new vault needs an empty directory"
         case .invalidScryptLogN:
-            return "scrypt logN is out of range (allowed: 10...31, or 0 for the default)"
+            return "scrypt logN is out of range (allowed: 10...20, or 0 for the default)"
         case .initFailed(let code):
             return "Vault creation failed (engine status \(code))"
         }
+    }
+
+    /// The errno of a failed file operation; nil for errors about the vault itself.
+    public var posixCode: Int32? {
+        if case .posix(let code) = self { return code }
+        return nil
     }
 }
 

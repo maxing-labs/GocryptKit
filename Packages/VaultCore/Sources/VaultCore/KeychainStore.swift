@@ -77,6 +77,43 @@ public enum KeychainStore {
         }
     }
 
+    /// One stored item of this service: a credential or a mount context.
+    public struct StoredItem: Equatable, Sendable {
+        public let account: String
+        /// When the item was written. Saving replaces the item, so this is its age.
+        public let savedAt: Date?
+
+        public init(account: String, savedAt: Date?) {
+            self.account = account
+            self.savedAt = savedAt
+        }
+    }
+
+    /// Every item stored under this service, including ones for vaults that are
+    /// not registered in the app (CLI mounts). Values are not read.
+    public static func storedItems() -> [StoredItem] {
+        var query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: serviceName,
+            kSecReturnAttributes as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+        ]
+        if !accessGroup.isEmpty {
+            query[kSecAttrAccessGroup as String] = accessGroup
+            query[kSecUseDataProtectionKeychain as String] = true
+        }
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let items = result as? [[String: Any]] else {
+            return []
+        }
+        return items.compactMap { attributes in
+            guard let account = attributes[kSecAttrAccount as String] as? String else { return nil }
+            let savedAt = (attributes[kSecAttrModificationDate as String] ?? attributes[kSecAttrCreationDate as String]) as? Date
+            return StoredItem(account: account, savedAt: savedAt)
+        }
+    }
+
     /// Deletes the credential for the given account from the shared Keychain.
     @discardableResult
     public static func deleteCredential(account: String) -> Bool {

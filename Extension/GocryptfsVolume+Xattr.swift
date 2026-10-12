@@ -21,9 +21,9 @@ extension GocryptfsVolume: FSVolume.XattrOperations {
             return replyHandler(nil, POSIXError(.EINVAL))
         }
         do {
-            replyHandler(try engine.getXattr(gcItem.plainPath, named: attr), nil)
+            replyHandler(try gcItem.withRef { try engine.getXattr($0, named: attr) }, nil)
         } catch {
-            replyHandler(nil, Self.posixError(from: error, default: .ENOATTR))
+            replyHandler(nil, Self.posixError(for: error))
         }
     }
 
@@ -40,16 +40,17 @@ extension GocryptfsVolume: FSVolume.XattrOperations {
         }
         do {
             if policy == .delete {
-                try engine.removeXattr(gcItem.plainPath, named: attr)
+                try gcItem.withRef { try engine.removeXattr($0, named: attr) }
             } else {
                 // Policies other than delete require a non-nil value per protocol contract.
                 guard let value else { return replyHandler(POSIXError(.EINVAL)) }
-                try engine.setXattr(gcItem.plainPath, named: attr, to: value,
-                                    policy: Self.writePolicy(for: policy))
+                try gcItem.withRef {
+                    try engine.setXattr($0, named: attr, to: value, policy: Self.writePolicy(for: policy))
+                }
             }
             replyHandler(nil)
         } catch {
-            replyHandler(Self.posixError(from: error, default: .EIO))
+            replyHandler(Self.posixError(for: error))
         }
     }
 
@@ -59,10 +60,10 @@ extension GocryptfsVolume: FSVolume.XattrOperations {
             return replyHandler(nil, POSIXError(.EINVAL))
         }
         do {
-            let names = try engine.listXattrs(gcItem.plainPath)
+            let names = try gcItem.withRef { try engine.listXattrs($0) }
             replyHandler(names.map { FSFileName(string: $0) }, nil)
         } catch {
-            replyHandler(nil, Self.posixError(from: error, default: .EIO))
+            replyHandler(nil, Self.posixError(for: error))
         }
     }
 
@@ -72,16 +73,5 @@ extension GocryptfsVolume: FSVolume.XattrOperations {
         case .mustReplace: return .mustReplace
         default:           return .alwaysSet
         }
-    }
-
-    /// The engine propagates underlying errno via `VaultError.ioError(errno)`, which we convert directly
-    /// for the kernel — the kernel distinguishes between ENOATTR, EEXIST, and ERANGE, and squashing
-    /// them into EIO breaks probe calls in getxattr.
-    private static func posixError(from error: any Error, default fallback: POSIXError.Code) -> any Error {
-        guard case .ioError(let code)? = error as? VaultError,
-              let posix = POSIXError.Code(rawValue: code) else {
-            return POSIXError(fallback)
-        }
-        return POSIXError(posix)
     }
 }

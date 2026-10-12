@@ -40,13 +40,12 @@ func (volume *Volume) mkdirWithIv(dirfd int, cName string, mode uint32) error {
 	return err
 }
 
-//export gcf_list_dir
 func gcf_list_dir(sessionID int, dirName string) (*C.char, *C.int, C.int) {
-	value, ok := OpenedVolumes.Load(sessionID)
-	if !ok {
+	volume := acquireVolume(sessionID)
+	if volume == nil {
 		return nil, nil, 0
 	}
-	volume := value.(*Volume)
+	defer volume.release()
 	parentDirFd, cDirName, err := volume.prepareAtSyscallMyself(dirName)
 	if err != nil {
 		return nil, nil, 0
@@ -120,117 +119,108 @@ func gcf_list_dir(sessionID int, dirName string) (*C.char, *C.int, C.int) {
 	return C.CString(plain.String()), (*C.int)(p), (C.int)(len(modes))
 }
 
-//export gcf_mkdir
-func gcf_mkdir(sessionID int, path string, mode uint32) bool {
-	value, ok := OpenedVolumes.Load(sessionID)
-	if !ok {
-		return false
-	}
-	volume := value.(*Volume)
+func (volume *Volume) mkdir(path string, mode uint32) error {
 	dirfd, cName, err := volume.prepareAtSyscall(path)
 	if err != nil {
-		return false
+		return err
 	}
 	defer syscall.Close(dirfd)
 
 	if volume.plainTextNames {
 		err = unix.Mkdirat(dirfd, cName, mode)
 		if err != nil {
-			return false
+			return err
 		}
 		var ust unix.Stat_t
-		err = syscallcompat.Fstatat(dirfd, cName, &ust, unix.AT_SYMLINK_NOFOLLOW)
+		return syscallcompat.Fstatat(dirfd, cName, &ust, unix.AT_SYMLINK_NOFOLLOW)
+	}
+	// We need write and execute permissions to create gocryptfs.diriv.
+	// Also, we need read permissions to open the directory (to avoid
+	// race-conditions between getting and setting the mode).
+	origMode := mode
+	mode = mode | 0700
+
+	// Handle long file name
+	if nametransform.IsLongContent(cName) {
+		// Create ".name"
+		err = volume.nameTransform.WriteLongNameAt(dirfd, cName, path)
 		if err != nil {
-			return false
+			return err
+		}
+
+		// Create directory
+		err = volume.mkdirWithIv(dirfd, cName, mode)
+		if err != nil {
+			nametransform.DeleteLongNameAt(dirfd, cName)
+			return err
 		}
 	} else {
-		// We need write and execute permissions to create gocryptfs.diriv.
-		// Also, we need read permissions to open the directory (to avoid
-		// race-conditions between getting and setting the mode).
-		origMode := mode
-		mode := mode | 0700
-
-		// Handle long file name
-		if nametransform.IsLongContent(cName) {
-			// Create ".name"
-			err = volume.nameTransform.WriteLongNameAt(dirfd, cName, path)
-			if err != nil {
-				return false
-			}
-
-			// Create directory
-			err = volume.mkdirWithIv(dirfd, cName, mode)
-			if err != nil {
-				nametransform.DeleteLongNameAt(dirfd, cName)
-				return false
-			}
-		} else {
-			err = volume.mkdirWithIv(dirfd, cName, mode)
-			if err != nil {
-				return false
-			}
-		}
-
-		fd, err := syscallcompat.Openat(dirfd, cName,
-			syscall.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
+		err = volume.mkdirWithIv(dirfd, cName, mode)
 		if err != nil {
-			return false
-		}
-		defer syscall.Close(fd)
-
-		var st syscall.Stat_t
-		err = syscall.Fstat(fd, &st)
-		if err != nil {
-			return false
-		}
-
-		// Fix permissions
-		if origMode != mode {
-			// Preserve SGID bit if it was set due to inheritance.
-			origMode = uint32(st.Mode&^0777) | origMode
-			syscall.Fchmod(fd, origMode)
+			return err
 		}
 	}
 
-	return true
+	fd, err := syscallcompat.Openat(dirfd, cName,
+		syscall.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return err
+	}
+	defer syscall.Close(fd)
+
+	var st syscall.Stat_t
+	err = syscall.Fstat(fd, &st)
+	if err != nil {
+		return err
+	}
+
+	// Fix permissions
+	if origMode != mode {
+		// Preserve SGID bit if it was set due to inheritance.
+		origMode = uint32(st.Mode&^0777) | origMode
+		syscall.Fchmod(fd, origMode)
+	}
+	return nil
 }
 
-//export gcf_rmdir
-func gcf_rmdir(sessionID int, relPath string) bool {
-	value, ok := OpenedVolumes.Load(sessionID)
-	if !ok {
+func gcf_mkdir(sessionID int, path string, mode uint32) bool {
+	volume := acquireVolume(sessionID)
+	if volume == nil {
 		return false
 	}
-	volume := value.(*Volume)
+	defer volume.release()
+	return errToBool(volume.mkdir(path, mode))
+}
+
+func (volume *Volume) rmdir(relPath string) error {
+	defer volume.dirCache.Clear()
 	parentDirFd, cName, err := volume.prepareAtSyscall(relPath)
 	if err != nil {
-		return false
+		return err
 	}
 	defer syscall.Close(parentDirFd)
 	if volume.plainTextNames {
 		// Unlinkat with AT_REMOVEDIR is equivalent to Rmdir
-		err = unix.Unlinkat(parentDirFd, cName, unix.AT_REMOVEDIR)
-		return errToBool(err)
+		return unix.Unlinkat(parentDirFd, cName, unix.AT_REMOVEDIR)
 	}
 	dirfd, err := syscallcompat.Openat(parentDirFd, cName, syscall.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
 	if err != nil {
-		return false
+		return err
 	}
 	defer syscall.Close(dirfd)
 	// Check directory contents
 	children, err := syscallcompat.Getdents(dirfd)
 	if err == io.EOF {
 		// The directory is empty
-		err = unix.Unlinkat(parentDirFd, cName, unix.AT_REMOVEDIR)
-		return errToBool(err)
+		return unix.Unlinkat(parentDirFd, cName, unix.AT_REMOVEDIR)
 	}
 	if err != nil {
-		return false
+		return err
 	}
 	// If the directory is not empty besides gocryptfs.diriv, do not even
 	// attempt the dance around gocryptfs.diriv.
 	if len(children) > 1 {
-		return false
+		return syscall.ENOTEMPTY
 	}
 	// Move "gocryptfs.diriv" to the parent dir as "gocryptfs.diriv.rmdir.XYZ"
 	tmpName := fmt.Sprintf("%s.rmdir.%d", nametransform.DirIVFilename, cryptocore.RandUint64())
@@ -240,7 +230,7 @@ func gcf_rmdir(sessionID int, relPath string) bool {
 	defer volume.dirIVLock.Unlock()
 	err = syscallcompat.Renameat(dirfd, nametransform.DirIVFilename, parentDirFd, tmpName)
 	if err != nil {
-		return false
+		return err
 	}
 	// Actual Rmdir
 	err = syscallcompat.Unlinkat(parentDirFd, cName, unix.AT_REMOVEDIR)
@@ -248,7 +238,7 @@ func gcf_rmdir(sessionID int, relPath string) bool {
 		// This can happen if another file in the directory was created in the
 		// meantime, undo the rename
 		syscallcompat.Renameat(parentDirFd, tmpName, dirfd, nametransform.DirIVFilename)
-		return errToBool(err)
+		return err
 	}
 	// Delete "gocryptfs.diriv.rmdir.XYZ"
 	syscallcompat.Unlinkat(parentDirFd, tmpName, 0)
@@ -256,6 +246,14 @@ func gcf_rmdir(sessionID int, relPath string) bool {
 	if nametransform.IsLongContent(cName) {
 		nametransform.DeleteLongNameAt(parentDirFd, cName)
 	}
-	volume.dirCache.Delete(relPath)
-	return true
+	return nil
+}
+
+func gcf_rmdir(sessionID int, relPath string) bool {
+	volume := acquireVolume(sessionID)
+	if volume == nil {
+		return false
+	}
+	defer volume.release()
+	return errToBool(volume.rmdir(relPath))
 }

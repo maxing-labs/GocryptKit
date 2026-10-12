@@ -25,14 +25,15 @@ extension GocryptfsVolume {
             return replyHandler(0, nil)
         }
 
-        let handle: Int32
+        let lease: GocryptfsItem.ReadLease
         do {
-            handle = try gcItem.acquireReadHandle(using: engine)
+            lease = try gcItem.acquireReadLease(using: engine)
         } catch {
             logger.error("Failed to open file for read: \(error.localizedDescription, privacy: .private)")
-            return replyHandler(0, POSIXError(.EIO))
+            return replyHandler(0, Self.posixError(for: error))
         }
-        defer { gcItem.releaseReadHandle(using: engine) }
+        defer { gcItem.release(lease, using: engine) }
+        let handle = lease.handle
 
         var readBytes = 0
         var readError: Error?
@@ -51,7 +52,7 @@ extension GocryptfsVolume {
 
         if let err = readError {
             logger.error("Failed to read decrypted data: \(err.localizedDescription, privacy: .private)")
-            return replyHandler(0, POSIXError(.EIO))
+            return replyHandler(0, Self.posixError(for: err))
         }
 
         replyHandler(readBytes, nil)
@@ -79,7 +80,7 @@ extension GocryptfsVolume {
             handle = try gcItem.acquireWriteHandle(using: engine)
         } catch {
             logger.error("Failed to acquire write handle for write: \(error.localizedDescription, privacy: .private)")
-            return replyHandler(0, POSIXError(.EIO))
+            return replyHandler(0, Self.posixError(for: error))
         }
         defer { gcItem.releaseWriteHandle(using: engine) }
 
@@ -96,7 +97,7 @@ extension GocryptfsVolume {
 
         if let err = writeError {
             logger.error("engine.write failed: \(err.localizedDescription, privacy: .private)")
-            return replyHandler(0, POSIXError(.EIO))
+            return replyHandler(0, Self.posixError(for: err))
         }
 
         replyHandler(written, nil)
@@ -110,6 +111,9 @@ extension GocryptfsVolume {
         guard let gcItem = item as? GocryptfsItem else {
             return replyHandler(POSIXError(.EINVAL))
         }
+        #if DEBUG
+        logger.debug("openItem modes=\(modes.rawValue, privacy: .public) item=\(gcItem.name, privacy: .private)")
+        #endif
 
         if modes.contains(.write) {
             guard !isReadOnly else {
@@ -119,15 +123,11 @@ extension GocryptfsVolume {
 
         if gcItem.itemType == .file {
             do {
-                if modes.contains(.write) {
-                    _ = try gcItem.acquireWriteHandle(using: engine)
-                } else {
-                    _ = try gcItem.acquireReadHandle(using: engine)
-                }
+                try gcItem.open(modes: modes, using: engine)
                 replyHandler(nil)
             } catch {
                 logger.error("openItem failed for \(gcItem.name, privacy: .private): \(error.localizedDescription, privacy: .private)")
-                replyHandler(POSIXError(.EIO))
+                replyHandler(Self.posixError(for: error))
             }
         } else {
             replyHandler(nil)
@@ -140,13 +140,12 @@ extension GocryptfsVolume {
         guard let gcItem = item as? GocryptfsItem else {
             return replyHandler(POSIXError(.EINVAL))
         }
+        #if DEBUG
+        logger.debug("closeItem keep=\(modes.rawValue, privacy: .public) item=\(gcItem.name, privacy: .private)")
+        #endif
 
         if gcItem.itemType == .file {
-            if modes.contains(.write) {
-                gcItem.releaseWriteHandle(using: engine)
-            } else {
-                gcItem.releaseReadHandle(using: engine)
-            }
+            gcItem.close(keeping: modes, using: engine)
         }
         replyHandler(nil)
     }

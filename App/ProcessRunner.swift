@@ -22,6 +22,25 @@ private final class LockedBuffer: @unchecked Sendable {
 enum ProcessRunner {
     static let defaultTimeout: TimeInterval = 15.0
 
+    private static let activeLock = NSLock()
+    nonisolated(unsafe) private static var activeChild: Process?
+
+    private static func setActiveChild(_ task: Process?) {
+        activeLock.lock()
+        activeChild = task
+        activeLock.unlock()
+    }
+
+    /// Stops the command started by `runWithTimeout`, if one is running.
+    static func terminateActiveChild() {
+        activeLock.lock()
+        let task = activeChild
+        activeLock.unlock()
+        if let task, task.isRunning {
+            task.terminate()
+        }
+    }
+
     static func runCapturingOutput(_ path: String, _ args: [String]) -> String? {
         run(path, args, captureStandardError: false)
     }
@@ -87,6 +106,8 @@ enum ProcessRunner {
         }
 
         try task.run()
+        setActiveChild(task)
+        defer { setActiveChild(nil) }
 
         let deadline = Date().addingTimeInterval(timeout)
         while task.isRunning && Date() < deadline {

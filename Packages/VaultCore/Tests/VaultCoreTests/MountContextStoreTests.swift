@@ -5,14 +5,25 @@ final class MountContextStoreTests: XCTestCase {
 
     let testCipherPath = "/tmp/test-gocryptfskit-cipher"
 
-    override func setUp() {
-        super.setUp()
+    /// Whether the keychain calls go to this test's own service.
+    private var isolated: Bool { KeychainStore.serviceName != KeychainConfig.defaultServiceName }
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         setenv("GOCRYPTFSKIT_KEYCHAIN_ACCESS_GROUP", "", 1)
-        MountContextStore.delete(for: testCipherPath)
+        // A service of this test's own: the login keychain also holds the app's items.
+        setenv("GOCRYPTFSKIT_KEYCHAIN_SERVICE_NAME", "com.xwei.GocryptfsKit.tests.\(UUID().uuidString)", 1)
+        // Release builds ignore the override (KeychainConfig).
+        guard isolated else { throw XCTSkip("the keychain service override needs a DEBUG build") }
     }
 
     override func tearDown() {
-        MountContextStore.delete(for: testCipherPath)
+        if isolated {
+            for item in KeychainStore.storedItems() {
+                KeychainStore.deleteCredential(account: item.account)
+            }
+        }
+        unsetenv("GOCRYPTFSKIT_KEYCHAIN_SERVICE_NAME")
         unsetenv("GOCRYPTFSKIT_KEYCHAIN_ACCESS_GROUP")
         super.tearDown()
     }
@@ -82,5 +93,34 @@ final class MountContextStoreTests: XCTestCase {
 
         MountContextStore.delete(for: testCipherPath)
         XCTAssertNil(MountContextStore.load(for: testCipherPath))
+    }
+
+    func testStoredItemsListsAccountsWithTheirAge() {
+        let context = MountContext(volumeName: "listed", isReadOnly: false, mountPoint: "/tmp/listed")
+        XCTAssertTrue(MountContextStore.save(context, for: testCipherPath))
+        let account = MountContextStore.accountKey(for: testCipherPath)
+        let listed = KeychainStore.storedItems().first { $0.account == account }
+        XCTAssertNotNil(listed, "a saved item must be enumerable without knowing its vault")
+        if let savedAt = listed?.savedAt {
+            XCTAssertLessThan(abs(savedAt.timeIntervalSinceNow), 60)
+        } else {
+            XCTFail("stored item has no date")
+        }
+        XCTAssertEqual(MountContextStore.vaultKey(forAccount: account), Vault.canonicalKey(path: testCipherPath))
+        XCTAssertEqual(MountContextStore.vaultKey(forAccount: "/plain/account"), "/plain/account")
+        MountContextStore.delete(for: testCipherPath)
+        XCTAssertFalse(KeychainStore.storedItems().contains { $0.account == account })
+    }
+
+    /// A-8: the tests write to a keychain service of their own, never to the app's.
+    func testItemsStayOutOfTheAppsService() {
+        let context = MountContext(volumeName: "isolated", isReadOnly: false, mountPoint: "/tmp/isolated")
+        XCTAssertTrue(MountContextStore.save(context, for: testCipherPath))
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: KeychainConfig.defaultServiceName,
+            kSecAttrAccount as String: MountContextStore.accountKey(for: testCipherPath),
+        ]
+        XCTAssertEqual(SecItemCopyMatching(query as CFDictionary, nil), errSecItemNotFound)
     }
 }

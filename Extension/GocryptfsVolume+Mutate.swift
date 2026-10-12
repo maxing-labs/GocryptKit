@@ -23,6 +23,8 @@ extension GocryptfsVolume {
         }
 
         let childPlain = dirItem.plainPath.isEmpty ? nameString : "\(dirItem.plainPath)/\(nameString)"
+        // A new file's writable handle, handed to the item for the open that follows.
+        var creationHandle: Int32 = -1
 
         switch type {
         case .directory:
@@ -31,56 +33,61 @@ extension GocryptfsVolume {
                 try engine.mkdir(childPlain, mode: mode)
             } catch {
                 logger.error("createItem mkdir failed for \(nameString, privacy: .private): \(error.localizedDescription, privacy: .private)")
-                return replyHandler(nil, nil, POSIXError(.EIO))
+                return replyHandler(nil, nil, Self.posixError(for: error))
             }
 
         case .file:
             let mode = attributes.isValid(.mode) ? (attributes.mode & 0o7777) : 0o644
             do {
-                let h = try engine.openWrite(childPlain, mode: mode)
-                engine.close(h)
+                // Exclusive: two racing creates of one name (lock files) must not
+                // both succeed, and an existing file must never be reopened here.
+                creationHandle = try engine.createFile(childPlain, mode: mode)
             } catch {
-                logger.error("createItem openWrite failed for \(nameString, privacy: .private): \(error.localizedDescription, privacy: .private)")
-                return replyHandler(nil, nil, POSIXError(.EIO))
+                logger.error("createItem create failed for \(nameString, privacy: .private): \(error.localizedDescription, privacy: .private)")
+                return replyHandler(nil, nil, Self.posixError(for: error))
             }
 
         default:
             return replyHandler(nil, nil, POSIXError(.ENOTSUP))
         }
 
-        guard let cipherPath = engine.cipherPath(childPlain) else {
-            return replyHandler(nil, nil, POSIXError(.ENOENT))
+        if creationHandle >= 0, attributes.isValid(.size), attributes.size > 0 {
+            // A file that could not be given its requested size must not be
+            // reported as created: undo it and pass the error on.
+            do {
+                try engine.truncate(creationHandle, size: attributes.size)
+            } catch {
+                logger.error("createItem truncate failed: \(error.localizedDescription, privacy: .private)")
+                engine.close(creationHandle)
+                try? engine.remove(childPlain)
+                return replyHandler(nil, nil, Self.posixError(for: error))
+            }
         }
 
-        var st = stat()
-        guard lstat(cipherPath, &st) == 0 else {
-            return replyHandler(nil, nil, POSIXError(POSIXError.Code(rawValue: errno) ?? .ENOENT))
+        let st: ItemStat
+        do {
+            st = try engine.stat(childPlain)
+        } catch {
+            if creationHandle >= 0 { engine.close(creationHandle) }
+            return replyHandler(nil, nil, Self.posixError(for: error, default: .ENOENT))
         }
 
-        let itemID = FSItem.Identifier(rawValue: st.st_ino) ?? .invalid
+        let itemID = FSItem.Identifier(rawValue: st.inode) ?? .invalid
         let newItem = GocryptfsItem(
             id: itemID,
             plainPath: childPlain,
             name: nameString,
             itemType: type,
-            inode: st.st_ino,
+            inode: st.inode,
             parent: dirItem
         )
+        if creationHandle >= 0 {
+            newItem.keepCreationHandle(creationHandle)
+        }
 
         cacheLock.lock()
         pathCache[childPlain] = newItem
-        inodeCache[st.st_ino] = newItem
         cacheLock.unlock()
-
-        if attributes.isValid(.size) && attributes.size > 0 {
-            do {
-                _ = try newItem.acquireWriteHandle(using: engine)
-                defer { newItem.releaseWriteHandle(using: engine) }
-                try engine.truncate(childPlain, size: attributes.size)
-            } catch {
-                logger.error("createItem truncate failed: \(error.localizedDescription, privacy: .private)")
-            }
-        }
 
         replyHandler(newItem, name, nil)
     }
@@ -118,36 +125,31 @@ extension GocryptfsVolume {
         }
 
         do {
-            if gcItem.itemType == .directory {
-                try engine.rmdir(gcItem.plainPath)
-            } else {
-                try engine.remove(gcItem.plainPath)
-            }
-        } catch let vaultErr as VaultError {
-            logger.error("removeItem failed: \(vaultErr.localizedDescription, privacy: .private)")
-            switch vaultErr {
-            case .notFound:
-                return replyHandler(POSIXError(.ENOENT))
-            case .ioError(let code):
-                return replyHandler(POSIXError(POSIXError.Code(rawValue: code) ?? .EIO))
-            default:
-                return replyHandler(POSIXError(.EIO))
+            // Keep the handles: a process that still has the file open goes on
+            // reading and writing the unlinked inode until FSKit closes or reclaims
+            // the item. Closing them here made the next write reopen by path and
+            // resurrect the file (or write into whatever took over the name).
+            try GocryptfsItem.whileLocked([gcItem]) {
+                if gcItem.itemType == .directory {
+                    try engine.rmdir(gcItem.lockedPlainPath)
+                } else {
+                    try engine.remove(gcItem.lockedPlainPath)
+                }
+                gcItem.markUnlinkedLocked()
             }
         } catch {
-            return replyHandler(POSIXError(.EIO))
+            logger.error("removeItem failed: \(error.localizedDescription, privacy: .private)")
+            return replyHandler(Self.posixError(for: error))
         }
 
-        gcItem.forceClose(using: engine)
         cacheLock.lock()
         pathCache.removeValue(forKey: gcItem.plainPath)
-        inodeCache.removeValue(forKey: gcItem.inode)
         if gcItem.itemType == .directory {
             let prefix = gcItem.plainPath + "/"
             let childKeys = pathCache.keys.filter { $0.hasPrefix(prefix) }
             for k in childKeys {
                 if let child = pathCache.removeValue(forKey: k) {
-                    inodeCache.removeValue(forKey: child.inode)
-                    child.forceClose(using: engine)
+                    child.markUnlinked()
                 }
             }
         }
@@ -172,35 +174,31 @@ extension GocryptfsVolume {
             return replyHandler(nil, POSIXError(.EINVAL))
         }
 
-        let oldPlain = fromItem.plainPath
         let newPlain = dstDir.plainPath.isEmpty ? dstNameString : "\(dstDir.plainPath)/\(dstNameString)"
+        let over = overItem as? GocryptfsItem
 
+        // The replaced item becomes an unlinked inode for whoever has it open, and
+        // open handles follow the moved item's inode. Both are marked in the same
+        // step as the rename, so neither resolves its old path to the other file.
+        let oldPlain: String
         do {
-            try engine.rename(from: oldPlain, to: newPlain)
-        } catch let vaultErr as VaultError {
-            logger.error("renameItem failed: \(vaultErr.localizedDescription, privacy: .private)")
-            switch vaultErr {
-            case .notFound:
-                return replyHandler(nil, POSIXError(.ENOENT))
-            case .ioError(let code):
-                return replyHandler(nil, POSIXError(POSIXError.Code(rawValue: code) ?? .EIO))
-            default:
-                return replyHandler(nil, POSIXError(.EIO))
+            oldPlain = try GocryptfsItem.whileLocked([fromItem] + (over.map { [$0] } ?? [])) {
+                let oldPlain = fromItem.lockedPlainPath
+                try engine.rename(from: oldPlain, to: newPlain)
+                over?.markUnlinkedLocked()
+                fromItem.updatePathLocked(plainPath: newPlain, name: dstNameString, parent: dstDir)
+                return oldPlain
             }
         } catch {
-            return replyHandler(nil, POSIXError(.EIO))
+            logger.error("renameItem failed: \(error.localizedDescription, privacy: .private)")
+            return replyHandler(nil, Self.posixError(for: error))
         }
 
         cacheLock.lock()
         pathCache.removeValue(forKey: oldPlain)
-        if let over = overItem as? GocryptfsItem {
+        if let over {
             pathCache.removeValue(forKey: over.plainPath)
-            inodeCache.removeValue(forKey: over.inode)
-            over.forceClose(using: engine)
         }
-
-        fromItem.forceClose(using: engine)
-        fromItem.updatePath(plainPath: newPlain, name: dstNameString, parent: dstDir)
         pathCache[newPlain] = fromItem
 
         if fromItem.itemType == .directory {
@@ -231,29 +229,60 @@ extension GocryptfsVolume {
             return replyHandler(nil, POSIXError(.EINVAL))
         }
 
-        if newAttributes.isValid(.size) {
-            guard gcItem.itemType == .file else {
-                return replyHandler(nil, POSIXError(.EISDIR))
-            }
+        // FSKit: ignore the size of directories and symlinks, without an error.
+        if newAttributes.isValid(.size), gcItem.itemType == .file {
             do {
-                _ = try gcItem.acquireWriteHandle(using: engine)
+                let handle = try gcItem.acquireWriteHandle(using: engine)
                 defer { gcItem.releaseWriteHandle(using: engine) }
-                try engine.truncate(gcItem.plainPath, size: newAttributes.size)
+                try engine.truncate(handle, size: newAttributes.size)
             } catch {
                 logger.error("setAttributes truncate failed: \(error.localizedDescription, privacy: .private)")
-                return replyHandler(nil, POSIXError(.EIO))
+                return replyHandler(nil, Self.posixError(for: error))
             }
+            newAttributes.consumedAttributes.insert(.size)
         }
 
+        // Through the engine: dirfd-relative and never following a symlink.
+        // chmod(2) on the ciphertext path string would follow one planted as
+        // the last component and change a file outside the vault.
+        var changes = AttributeChanges()
+        var consumed: FSItem.Attribute = []
         if newAttributes.isValid(.mode) {
-            if let cipherPath = engine.cipherPath(gcItem.plainPath) {
-                let ret = chmod(cipherPath, mode_t(newAttributes.mode & 0o7777))
-                if ret != 0 {
-                    let err = errno
-                    logger.error("setAttributes chmod failed: errno \(err, privacy: .public)")
-                    return replyHandler(nil, POSIXError(POSIXErrorCode(rawValue: err) ?? .EPERM))
-                }
+            changes.mode = newAttributes.mode & 0o7777
+            consumed.insert(.mode)
+        }
+        if newAttributes.isValid(.uid) {
+            changes.uid = newAttributes.uid
+            consumed.insert(.uid)
+        }
+        if newAttributes.isValid(.gid) {
+            changes.gid = newAttributes.gid
+            consumed.insert(.gid)
+        }
+        if newAttributes.isValid(.flags) {
+            changes.flags = newAttributes.flags
+            consumed.insert(.flags)
+        }
+        if newAttributes.isValid(.accessTime) {
+            changes.accessTime = newAttributes.accessTime
+            consumed.insert(.accessTime)
+        }
+        if newAttributes.isValid(.modifyTime) {
+            changes.modifyTime = newAttributes.modifyTime
+            consumed.insert(.modifyTime)
+        }
+        if newAttributes.isValid(.birthTime) {
+            changes.birthTime = newAttributes.birthTime
+            consumed.insert(.birthTime)
+        }
+        if !changes.isEmpty {
+            do {
+                try gcItem.withRef { try engine.setAttributes($0, changes) }
+            } catch {
+                logger.error("setAttributes failed: \(error.localizedDescription, privacy: .private)")
+                return replyHandler(nil, Self.posixError(for: error, default: .EPERM))
             }
+            newAttributes.consumedAttributes.formUnion(consumed)
         }
 
         let getAttrRequest = FSItem.GetAttributesRequest()
@@ -262,13 +291,10 @@ extension GocryptfsVolume {
                                            .linkCount, .accessTime, .birthTime,
                                            .modifyTime, .changeTime]
 
-        let attrs = buildAttributes(
-            forPlainPath: gcItem.plainPath,
-            itemType: gcItem.itemType,
-            inode: gcItem.inode,
-            parentInode: gcItem.parent?.inode ?? 0,
-            request: getAttrRequest
-        )
-        replyHandler(attrs, nil)
+        do {
+            replyHandler(try attributes(of: gcItem, request: getAttrRequest), nil)
+        } catch {
+            replyHandler(nil, Self.posixError(for: error, default: .ENOENT))
+        }
     }
 }

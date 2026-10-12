@@ -90,4 +90,43 @@ final class OrphanReaperTests: XCTestCase {
         )
         XCTAssertEqual(reaped, [key, ctxKey])
     }
+
+    // MARK: - Age-based reaping over stored items (F-16, F-17)
+
+    private func item(_ account: String, age: TimeInterval?, now: Date) -> KeychainStore.StoredItem {
+        KeychainStore.StoredItem(account: account, savedAt: age.map { now.addingTimeInterval(-$0) })
+    }
+
+    func testFreshCredentialOfAnotherProcessIsNotReaped() {
+        // The CLI stored this a moment ago and is still mounting; the GUI must keep its hands off.
+        let now = Date()
+        let stored = [item("/vaults/cli", age: 3, now: now), item("mountctx:/vaults/cli", age: 3, now: now)]
+        XCTAssertEqual(OrphanReaper.accountsToReap(stored: stored, protectedVaultKeys: [], now: now), [])
+    }
+
+    func testStaleCredentialOfUnregisteredVaultIsReaped() {
+        // Left behind by an interrupted CLI mount of a vault the app has never heard of.
+        let now = Date()
+        let stored = [item("/vaults/unregistered", age: 600, now: now),
+                      item("mountctx:/vaults/unregistered", age: 600, now: now),
+                      item("/vaults/undated", age: nil, now: now)]
+        XCTAssertEqual(OrphanReaper.accountsToReap(stored: stored, protectedVaultKeys: [], now: now),
+                       ["/vaults/unregistered", "mountctx:/vaults/unregistered", "/vaults/undated"])
+    }
+
+    func testMountedAndInFlightVaultsAreProtectedRegardlessOfAge() {
+        let now = Date()
+        let stored = [item("/vaults/mounted", age: 600, now: now),
+                      item("mountctx:/vaults/mounted", age: 600, now: now),
+                      item("/vaults/orphan", age: 600, now: now)]
+        XCTAssertEqual(OrphanReaper.accountsToReap(stored: stored, protectedVaultKeys: ["/vaults/mounted"], now: now),
+                       ["/vaults/orphan"])
+    }
+
+    func testGracePeriodBoundary() {
+        let now = Date()
+        let stored = [item("/vaults/young", age: OrphanReaper.gracePeriod - 1, now: now),
+                      item("/vaults/old", age: OrphanReaper.gracePeriod + 1, now: now)]
+        XCTAssertEqual(OrphanReaper.accountsToReap(stored: stored, protectedVaultKeys: [], now: now), ["/vaults/old"])
+    }
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
@@ -52,6 +53,10 @@ type dirCache struct {
 	// On the first Lookup(), the expire thread is started, and this flag is set
 	// to true.
 	expireThreadRunning bool
+	// Closed by Stop() to end the expire thread.
+	stop chan struct{}
+	// Set by Stop(): the cache no longer accepts entries.
+	stopped bool
 	// Hit rate stats. Evaluated and reset by the expire thread.
 	lookups uint64
 	hits    uint64
@@ -69,6 +74,7 @@ func (d *dirCache) Clear() {
 // Store the entry in the cache. The passed "fd" will be Dup()ed, and the caller
 // can close their copy at will.
 func (d *dirCache) Store(path string, fd int, iv []byte) {
+	path = filepath.Clean("/" + path)
 	// Note: package ensurefds012, imported from main, guarantees that dirCache
 	// can never get fds 0,1,2.
 	if fd <= 0 || len(iv) != d.ivLen {
@@ -76,6 +82,9 @@ func (d *dirCache) Store(path string, fd int, iv []byte) {
 	}
 	d.Lock()
 	defer d.Unlock()
+	if d.stopped {
+		return
+	}
 	e := &d.entries[d.nextIndex]
 	// Round-robin works well enough
 	d.nextIndex = (d.nextIndex + 1) % dirCacheSize
@@ -91,7 +100,8 @@ func (d *dirCache) Store(path string, fd int, iv []byte) {
 	// expireThread is started on the first Lookup()
 	if !d.expireThreadRunning {
 		d.expireThreadRunning = true
-		go d.expireThread()
+		d.stop = make(chan struct{})
+		go d.expireThread(d.stop)
 	}
 }
 
@@ -99,6 +109,7 @@ func (d *dirCache) Store(path string, fd int, iv []byte) {
 // It returns (-1, nil) if not found. The fd is internally Dup()ed and the
 // caller must close it when done.
 func (d *dirCache) Lookup(path string) (fd int, iv []byte) {
+	path = filepath.Clean("/" + path)
 	d.Lock()
 	defer d.Unlock()
 	if enableStats {
@@ -135,15 +146,38 @@ func (d *dirCache) Lookup(path string) (fd int, iv []byte) {
 	return fd, iv
 }
 
-// expireThread is started on the first Lookup()
-func (d *dirCache) expireThread() {
+// expireThread is started on the first Store()
+func (d *dirCache) expireThread(stop <-chan struct{}) {
+	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
 	for {
-		time.Sleep(60 * time.Second)
-		d.Clear()
+		select {
+		case <-ticker.C:
+			d.Clear()
+		case <-stop:
+			return
+		}
 	}
 }
 
-func (d* dirCache) Delete(path string) {
+// Stop clears the cache for good and ends the expire thread.
+func (d *dirCache) Stop() {
+	d.Lock()
+	defer d.Unlock()
+	for i := range d.entries {
+		d.entries[i].Clear()
+	}
+	d.stopped = true
+	if d.stop != nil {
+		close(d.stop)
+		d.stop = nil
+	}
+}
+
+func (d *dirCache) Delete(path string) {
+	path = filepath.Clean("/" + path)
+	d.Lock()
+	defer d.Unlock()
 	for i := range d.entries {
 		e := &d.entries[i]
 		if e.path == path {

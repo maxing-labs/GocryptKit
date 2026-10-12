@@ -2647,6 +2647,57 @@
           }
         }
       }
+    },
+    "This vault is already mounted at %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This vault is already mounted at %@."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该保管库已挂载在 %@。"
+          }
+        }
+      }
+    },
+    "This vault lies inside the mounted vault at %@. Move it out of there to mount it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This vault lies inside the mounted vault at %@. Move it out of there to mount it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该保管库位于已挂载的保管库 %@ 之中。请先把它移出来再挂载。"
+          }
+        }
+      }
+    },
+    "Other users of this Mac can reach this location. Mounted files are readable by anyone who can get there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other users of this Mac can reach this location. Mounted files are readable by anyone who can get there."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这台 Mac 上的其他用户可以进入此位置；能进入的人都能读到挂载后的文件。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

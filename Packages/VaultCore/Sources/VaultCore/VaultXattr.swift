@@ -14,61 +14,81 @@ extension GocryptfsEngine {
 
     /// Reads an extended attribute.
     ///
-    /// Names and values are encrypted on the ciphertext side: names use EME cipher with an all-zero IV,
-    /// while values are encrypted via contentenc. Other attributes (e.g., those native to the underlying APFS)
+    /// Names and values are encrypted on the ciphertext side: names use the EME cipher with upstream
+    /// gocryptfs's fixed IV (entries written with the old all-zero IV are still read), while values
+    /// are encrypted via contentenc. Other attributes (e.g., those native to the underlying APFS)
     /// cannot be read and are not enumerated.
     public func getXattr(_ plain: String, named name: String) throws -> Data {
-        let pathCStr = strdup(plain); defer { free(pathCStr) }
-        let nameCStr = strdup(name);  defer { free(nameCStr) }
+        try getXattr(.path(plain), named: name)
+    }
 
-        let needed = gcfc_get_xattr(volumeID, pathCStr, nameCStr, nil, 0)
-        if needed < 0 { throw VaultError.ioError(Int32(-needed)) }
-        if needed == 0 { return Data() }
+    public func getXattr(_ item: ItemRef, named name: String) throws -> Data {
+        try withCItem(item) { pathCStr, handle in
+            let nameCStr = strdup(name); defer { free(nameCStr) }
 
-        var buffer = [UInt8](repeating: 0, count: Int(needed))
-        let n = gcfc_get_xattr(volumeID, pathCStr, nameCStr, &buffer, buffer.count)
-        if n < 0 { throw VaultError.ioError(Int32(-n)) }
-        return Data(buffer[0..<Int(n)])
+            let needed = gcfc_get_xattr(volumeID, pathCStr, handle, nameCStr, nil, 0)
+            try Self.check(needed)
+            if needed == 0 { return Data() }
+
+            var buffer = [UInt8](repeating: 0, count: Int(needed))
+            let n = gcfc_get_xattr(volumeID, pathCStr, handle, nameCStr, &buffer, buffer.count)
+            try Self.check(n)
+            return Data(buffer[0..<Int(n)])
+        }
     }
 
     public func setXattr(_ plain: String, named name: String, to value: Data,
                          policy: XattrWritePolicy = .alwaysSet) throws {
-        guard value.count <= Self.maximumXattrValueSize else {
-            throw VaultError.ioError(E2BIG)
-        }
-        let pathCStr = strdup(plain); defer { free(pathCStr) }
-        let nameCStr = strdup(name);  defer { free(nameCStr) }
+        try setXattr(.path(plain), named: name, to: value, policy: policy)
+    }
 
-        let res = value.withUnsafeBytes { raw in
-            gcfc_set_xattr(volumeID, pathCStr, nameCStr,
-                           UnsafeMutableRawPointer(mutating: raw.baseAddress),
-                           raw.count, policy.rawValue)
+    public func setXattr(_ item: ItemRef, named name: String, to value: Data,
+                         policy: XattrWritePolicy = .alwaysSet) throws {
+        guard value.count <= Self.maximumXattrValueSize else {
+            throw VaultError.posix(E2BIG)
         }
-        if res != 0 { throw VaultError.ioError(-res) }
+        try withCItem(item) { pathCStr, handle in
+            let nameCStr = strdup(name); defer { free(nameCStr) }
+            let res = value.withUnsafeBytes { raw in
+                gcfc_set_xattr(volumeID, pathCStr, handle, nameCStr,
+                               UnsafeMutableRawPointer(mutating: raw.baseAddress),
+                               raw.count, policy.rawValue)
+            }
+            try Self.check(res)
+        }
     }
 
     public func removeXattr(_ plain: String, named name: String) throws {
-        let pathCStr = strdup(plain); defer { free(pathCStr) }
-        let nameCStr = strdup(name);  defer { free(nameCStr) }
-        let res = gcfc_remove_xattr(volumeID, pathCStr, nameCStr)
-        if res != 0 { throw VaultError.ioError(-res) }
+        try removeXattr(.path(plain), named: name)
+    }
+
+    public func removeXattr(_ item: ItemRef, named name: String) throws {
+        try withCItem(item) { pathCStr, handle in
+            let nameCStr = strdup(name); defer { free(nameCStr) }
+            let res = gcfc_remove_xattr(volumeID, pathCStr, handle, nameCStr)
+            try Self.check(res)
+        }
+    }
+
+    public func listXattrs(_ plain: String) throws -> [String] {
+        try listXattrs(.path(plain))
     }
 
     /// Lists all extended attribute names on this file created by this vault.
-    public func listXattrs(_ plain: String) throws -> [String] {
-        let pathCStr = strdup(plain); defer { free(pathCStr) }
+    public func listXattrs(_ item: ItemRef) throws -> [String] {
+        try withCItem(item) { pathCStr, handle in
+            let needed = gcfc_list_xattr(volumeID, pathCStr, handle, nil, 0)
+            try Self.check(needed)
+            if needed == 0 { return [] }
 
-        let needed = gcfc_list_xattr(volumeID, pathCStr, nil, 0)
-        if needed < 0 { throw VaultError.ioError(Int32(-needed)) }
-        if needed == 0 { return [] }
+            var buffer = [UInt8](repeating: 0, count: Int(needed))
+            let n = gcfc_list_xattr(volumeID, pathCStr, handle, &buffer, buffer.count)
+            try Self.check(n)
 
-        var buffer = [UInt8](repeating: 0, count: Int(needed))
-        let n = gcfc_list_xattr(volumeID, pathCStr, &buffer, buffer.count)
-        if n < 0 { throw VaultError.ioError(Int32(-n)) }
-
-        // listxattr(2) convention: a sequence of NUL-separated names without trailing sentinel.
-        return buffer[0..<Int(n)]
-            .split(separator: 0, omittingEmptySubsequences: true)
-            .map { String(decoding: $0, as: UTF8.self) }
+            // listxattr(2) convention: a sequence of NUL-separated names without trailing sentinel.
+            return buffer[0..<Int(n)]
+                .split(separator: 0, omittingEmptySubsequences: true)
+                .map { String(decoding: $0, as: UTF8.self) }
+        }
     }
 }

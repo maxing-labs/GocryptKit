@@ -246,6 +246,18 @@ final class CreateVaultTests: XCTestCase {
         }
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: tempDir.path), [])
     }
+
+    /// F-9: a vault is opened only if its scrypt parameters need at most 1 GiB
+    /// (logN 20 with R 8); creating one beyond that would lock the user out.
+    func testScryptLogNAboveTheOpeningLimitIsRejected() throws {
+        for bad: Int32 in [21, 31] {
+            XCTAssertThrowsError(
+                try GocryptfsEngine.createVault(at: tempDir, password: "pw", scryptLogN: bad),
+                "logN=\(bad) should be rejected"
+            ) { XCTAssertEqual($0 as? VaultError, .invalidScryptLogN, "logN=\(bad)") }
+        }
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: tempDir.path), [])
+    }
 }
 
 final class PasswordStrengthTests: XCTestCase {

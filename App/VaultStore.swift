@@ -45,7 +45,7 @@ final class VaultStore {
         } catch {
             // Inability to read the list should not block user workflow: fall back to an empty list, allowing re-registration.
             // Avoid overwriting the file on disk in case it can be manually recovered.
-            logger.error("Failed to read vault list: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to read vault list: \(error.localizedDescription, privacy: .private)")
             vaults = []
         }
     }
@@ -55,7 +55,7 @@ final class VaultStore {
         do {
             try VaultRegistry(vaults: vaults).save(to: storeURL)
         } catch {
-            logger.error("Failed to save vault list: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to save vault list: \(error.localizedDescription, privacy: .private)")
         }
     }
 
@@ -64,7 +64,6 @@ final class VaultStore {
     /// Re-reads the mount table from the kernel. Lightweight (single getfsstat), safe to call frequently.
     func refreshMountState() {
         mounts = MountTable.gocryptfsMounts()
-        MountManager.shared.reapOrphanCredentials(knownVaults: vaults)
     }
 
     func isMounted(_ vault: Vault) -> Bool {

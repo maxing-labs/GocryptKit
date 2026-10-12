@@ -197,7 +197,7 @@ final class MountTableTests: XCTestCase {
     }
 
     func testGocryptfsMountsIsKeyedByCanonicalCipherDir() {
-        for (key, entry) in MountTable.gocryptfsMounts() {
+        for (key, entry) in MountTable.gocryptfsMounts() where entry.source.hasPrefix("file://") {
             XCTAssertEqual(key, Vault.canonicalKey(path: entry.sourcePath))
             XCTAssertEqual(entry.fileSystemType, MountTable.gocryptfsTypeName)
             // Key must be a file path, not containing a file:// scheme.

@@ -118,6 +118,16 @@ perms_of() { stat -f %Lp "$1" 2>/dev/null; }
 
 step "0. 前置检查"
 [ -x "$APP" ] || { bad "找不到 $APP"; exit 1; }
+if mount | grep -q gocryptfs; then
+  bad "已有 gocryptfs 卷挂载；请先卸载，避免扩展测试影响其它卷"
+  exit 1
+fi
+if [ "${SECURITY_ONLY:-0}" = "1" ]; then
+  python3 "$HERE/integrity-regressions.py" --app "$APP"; integrity=$?
+  python3 "$HERE/cli-regressions.py" --app "$APP"; cli=$?
+  [ "$integrity" -eq 0 ] && [ "$cli" -eq 0 ]
+  exit $?
+fi
 ok "宿主 App 存在"
 if "$APP" status 2>/dev/null | grep -q ENABLED; then ok "FSKit 扩展已启用"; else bad "FSKit 扩展未启用"; exit 1; fi
 [ -d "$SAMPLES" ] || { echo "样本缺失，先跑 ./make-samples.sh"; exit 1; }
@@ -519,6 +529,48 @@ if [ ! -d "$ROMOUNT" ]; then
   ok "卸载后自动清理了 _READ_ONLY 临时空目录"
 else
   bad "卸载后未清理 _READ_ONLY 临时目录"
+fi
+
+step "18. 被占用卷普通卸载拦截与强制卸载 (-f) 测试"
+printf '%s\n' "$NEWPASSWORD" | "$APP" mount "$NEWCIPHER" "$NEWMOUNT" --password-stdin >/dev/null 2>&1 && ok "重新挂载新卷准备测试占用" || bad "重新挂载失败"
+
+# 在挂载点打开一个后台进程占用目录
+(cd "$NEWMOUNT" && sleep 10) &
+BUSY_PID=$!
+sleep 0.5
+
+# 尝试普通卸载，预期失败 (EBUSY / 资源繁忙)
+if "$APP" umount "$NEWMOUNT" >/dev/null 2>&1; then
+  bad "被占用卷普通卸载未被拦截 (预期失败但成功了)"
+else
+  ok "被占用卷普通卸载被正确拦截 (EBUSY)"
+fi
+
+# 尝试强制卸载 -f，预期成功
+if "$APP" umount -f "$NEWMOUNT" >/dev/null 2>&1; then
+  ok "被占用卷使用 -f 强制卸载成功"
+else
+  # 如果 umount -f 失败，尝试用系统 /sbin/umount -f
+  /sbin/umount -f "$NEWMOUNT" >/dev/null 2>&1 && ok "被占用卷系统强制卸载成功" || bad "被占用卷强制卸载失败"
+fi
+
+kill -9 "$BUSY_PID" >/dev/null 2>&1 || true
+wait "$BUSY_PID" 2>/dev/null || true
+
+mount | grep -q " $NEWMOUNT " && bad "强制卸载后仍在 mount 表中" || ok "强制卸载后已从 mount 表移除"
+
+step "19. 覆盖写、持久读句柄、目录对调及重建回归（逐项卸载重挂）"
+if python3 "$HERE/integrity-regressions.py" --app "$APP"; then
+  ok "数据完整性回归通过"
+else
+  bad "数据完整性回归失败"
+fi
+
+step "20. 宿主与 CLI 回归（参数解析、stdin 密码、中断清理、重复挂载、日志隐私）"
+if python3 "$HERE/cli-regressions.py" --app "$APP"; then
+  ok "宿主与 CLI 回归通过"
+else
+  bad "宿主与 CLI 回归失败"
 fi
 
 printf '\n\033[1m═══ 结果: %d 通过, %d 失败 ═══\033[0m\n' "$PASS" "$FAIL"

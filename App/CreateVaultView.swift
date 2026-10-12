@@ -67,6 +67,7 @@ struct CreateVaultView: View {
                 HStack(spacing: 4) {
                     if isShowingPassword {
                         TextField(loc("Set vault password (never stored anywhere)"), text: $password)
+                            .autocorrectionDisabled()
                     } else {
                         SecureField(loc("Set vault password (never stored anywhere)"), text: $password)
                     }
@@ -91,6 +92,7 @@ struct CreateVaultView: View {
                 HStack(spacing: 4) {
                     if isShowingPassword {
                         TextField(loc("Enter the same password again"), text: $confirmation)
+                            .autocorrectionDisabled()
                     } else {
                         SecureField(loc("Enter the same password again"), text: $confirmation)
                     }
